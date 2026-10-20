@@ -102,7 +102,7 @@ html[dir="rtl"] .font-display, html[dir="rtl"] .font-serif { font-family: var(--
 .site-header nav a, .language-switch { font-family: var(--font-sans), sans-serif; font-size: 11px; letter-spacing: .1em; padding-block: 14px; text-decoration: none; }
 .site-header nav a:hover { text-decoration: underline; text-underline-offset: 7px; }
 .language-switch { min-width: 44px; text-align: center; }
-.site-hero { min-height: 750px; height: calc(100svh - 100px); max-height: 1100px; position: relative; display: flex; align-items: center; padding: 7%; background: var(--sand); isolation: isolate; }
+.site-hero { overflow: hidden; min-height: 750px; height: calc(100svh - 100px); max-height: 1100px; position: relative; display: flex; align-items: center; padding: 7%; background: var(--sand); isolation: isolate; }
 .hero-art { position: absolute; inset-block: -10%; inset-inline: 38% 0; z-index: -1; }
 .hero-art .texture { height: 100%; }
 .hero-content { width: 75%; }
@@ -235,7 +235,7 @@ html[dir="rtl"] .hero-content h1 { font-size: clamp(3.5rem, 6.8vw, 7rem); }
   .site-header nav { order: 3; width: 100%; justify-content: space-between; }
   .site-header nav a { padding-block: 7px; min-height: 32px; }
   .language-switch { min-height: 44px; }
-  .site-hero { min-height: 700px; height: calc(100svh - 110px); padding: 55px 7%; align-items: start; }
+  .site-hero { overflow: hidden; min-height: 700px; height: calc(100svh - 110px); padding: 55px 7%; align-items: start; }
   .hero-art { inset-block: 35% 0; inset-inline: 22% 0; }
   .hero-content { width: 100%; }
   .hero-content h1 { font-size: clamp(3.35rem, 12vw, 5rem); margin-top: 25px; }
@@ -307,3 +307,16 @@ html[dir="rtl"] .hero-content h1 { font-size: clamp(3.5rem, 6.8vw, 7rem); }
   .detail-images .texture { height: 350px; }
 }
 .journey-track { position: relative; }
+html[dir="rtl"] .public-site .eyebrow,
+html[dir="rtl"] .public-site .site-button,
+html[dir="rtl"] .public-site .text-link,
+html[dir="rtl"] .public-site .site-header nav a,
+html[dir="rtl"] .public-site .concierge { font-family: var(--font-arabic), serif; letter-spacing: 0; font-size: 14px; }
+html[dir="rtl"] .public-site .wordmark span { font-family: var(--font-sans), sans-serif; }
+@media (max-width: 699px) { html[dir="rtl"] .public-site .hero-content .eyebrow { font-size: 12px; } }
+/* Solid caption grounds keep all palette placeholders at AA contrast. */
+.placeholder-label { width: fit-content; max-width: calc(100% - 40px); background: var(--cream); color: var(--oxblood); padding: 5px 8px; }
+.hero-note { background: var(--sand); box-shadow: 0 0 0 7px var(--sand); width: fit-content; }
+.hero-scroll, .hero-index { background: var(--sand); padding: 5px 8px; }
+.public-site a:focus-visible, .public-site summary:focus-visible { outline-color: var(--oxblood); }
+.occasion-evening a:focus-visible, .site-footer a:focus-visible { outline-color: var(--cream); }

@@ -1,13 +1,20 @@
 {
-  "meta": {
-    "title": "Shado Badr, Maison du Couture",
-    "description": "Bespoke evening and bridal gowns, made to measure in Cairo."
-  },
-  "nav": { "maison": "The Maison", "collection": "Collection", "journey": "The Journey", "book": "Book a Consultation" },
-  "hero": {
-    "tagline": "Gowns made for one woman, once.",
-    "cta": "Book a Private Consultation"
-  },
-  "lang": { "switch": "العربية" },
-  "whatsapp": { "label": "Speak with the atelier" }
+  "meta": {"title":"Shado Badr, Maison du Couture","description":"Bespoke evening and bridal gowns, made to measure in Cairo."},
+  "nav":{"maison":"The Maison","collection":"Collection","journey":"The Journey","book":"Book a Consultation"},
+  "hero":{"tagline":"Gowns made for one woman, once.","cta":"Book a Private Consultation"},
+  "lang":{"switch":"العربية"},"whatsapp":{"label":"Speak with the atelier"},
+  "site": {
+    "skip":"Skip to content","home":"The Maison, home","navigation":"Explore the maison","cta":"Book a Private Consultation","concierge":"WhatsApp concierge","whatsappMessage":"Hello, I would like to arrange a private consultation at Shado Badr.",
+    "eyebrow":"CAIRO · BESPOKE BRIDAL & EVENING","heroTitle":"For one woman.","heroItalic":"For her moment.","heroNote":"A dialogue between the hand, the fabric and you.","scroll":"An invitation to discover","placeholder":"TODO: replace · atelier photography","detailPlaceholder":"TODO: replace · detail photography","arabicReview":"",
+    "maison":{"label":"The Maison","title":"A personal language of couture.","intro":"Every gown begins with a conversation. A feeling, a gesture, a moment you want to hold.","body":"At Shado Badr, bridal and evening pieces are made to measure in Cairo. Silhouette, cloth and detail come together around the woman who will wear them.","closing":"Nothing is chosen without you. Nothing is made without care.","founder":"SHADO BADR · FOUNDER","caption":"01 / THE HAND OF THE MAISON"},
+    "collection":{"label":"The Collection","title":"Studies in silhouette.","note":"Four first expressions of the maison. Each a beginning, never a limit.","explore":"Discover the gown","hint":"Scroll the collection or use the arrow keys","back":"Back to the collection","fabric":"Fabric & material","craft":"The details","craftNote":"A closer look at the construction and finishing. Detailed photography and craftsmanship notes will be added with each gown."},
+    "bridal":{"label":"Bridal","title":"A quiet kind of extraordinary.","body":"Light on the skin. Considered in every fold. A bridal gown shaped around your own sense of occasion.","link":"Begin your bridal story"},
+    "evening":{"label":"Evening","title":"Presence, without a word.","body":"Sculptural lines, warm colour and the movement of cloth. Evening pieces made for the way you want to feel.","link":"Imagine your evening gown"},
+    "journey":{"label":"The Journey","title":"From a thought to a gown.","note":"A considered process, with you at its heart.","steps":[{"title":"Consultation","body":"We listen to your occasion, your ideas and the way you want to feel."},{"title":"Design & sketch","body":"A silhouette takes shape through a personal exchange."},{"title":"Fabric selection","body":"Weight, texture and movement guide the choice of cloth."},{"title":"Pattern & toile","body":"The first form is built, studied and refined."},{"title":"Fittings","body":"Proportion and fit are adjusted on you, with care."},{"title":"Finishing","body":"The final details are placed and finished by hand."},{"title":"Delivery","body":"Your gown, ready for its moment."}]},
+    "craft":{"label":"Savoir-faire","title":"The beauty is in the attention.","hint":"Select a study to look closer.","items":[{"title":"The fold","body":"Drape is studied in movement, letting the cloth find its line."},{"title":"The stitch","body":"Quiet construction gives a silhouette its confidence."},{"title":"The embellishment","body":"Detail is considered as part of the whole, never an afterthought."}]},
+    "faq":{"label":"A few details","title":"Before we meet.","items":[{"q":"Are all gowns made to measure?","a":"Yes. Bridal and evening gowns are created around each client, beginning with a private consultation."},{"q":"When should I get in touch?","a":"As early as you can. The atelier will discuss your event date and confirm a realistic making schedule before you commit."},{"q":"Can I bring inspiration?","a":"Please do. Images, a fabric, or simply a feeling can begin our conversation."},{"q":"Where do fittings take place?","a":"Fittings are arranged by appointment in Cairo. The atelier will share the exact location with your confirmation."}]},
+    "visit":{"label":"Atelier visit","title":"We look forward to meeting you.","body":"Cairo, Egypt. Private visits and fittings by confirmed appointment.","hours":"Opening hours · to be confirmed by the founder","map":"Explore Cairo on OpenStreetMap","address":"Exact atelier address shared upon confirmation."},
+    "notes":{"label":"From the atelier","journal":"Journal & press","journalText":"A space for stories, studies and future features. Coming soon.","instagram":"Instagram","instagramText":"Our visual journal is taking shape. The official account will be shared here.","testimonials":"Client words","testimonialsText":"A place for the women who wear the maison. Client testimonials will appear with their permission."},
+    "footer":{"title":"Your story, in the making.","note":"Made to measure. Made in Cairo."}
+  }
 }
