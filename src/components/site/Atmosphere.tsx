@@ -17,7 +17,7 @@ export function Atmosphere() {
       entrance.current.hidden = false;
       timer = setTimeout(() => { if (entrance.current) entrance.current.hidden = true; }, 2300);
     }
-    const move = (e: PointerEvent) => { if (cursor.current) cursor.current.style.transform = `translate3d(${e.clientX}px,${e.clientY}px,0)`; };
+    const move = (e: PointerEvent) => { if (cursor.current) { cursor.current.style.opacity = "1"; cursor.current.style.transform = `translate3d(${e.clientX}px,${e.clientY}px,0)`; } };
     if (matchMedia("(pointer: fine)").matches && !reduced.matches) window.addEventListener("pointermove", move);
     if (!reduced.matches) void import("lenis").then(({ default: Lenis }) => {
       if (stop || reduced.matches) return;

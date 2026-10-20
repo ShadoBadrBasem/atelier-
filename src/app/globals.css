@@ -203,7 +203,7 @@ html[dir="rtl"] .font-display, html[dir="rtl"] .font-serif { font-family: var(--
 .entrance img { animation: logo-reveal 1.2s .3s both; }
 .skip-link { position: fixed; inset-inline-start: 15px; top: -100px; z-index: 110; background: var(--cream); padding: 14px; }
 .skip-link:focus { top: 15px; }
-.atelier-cursor { display: none; }
+.atelier-cursor { display: none; opacity: 0; }
 .review-note { font-size: 14px; text-align: center; padding: 12px; }
 @keyframes entrance-away { to { opacity: 0; visibility: hidden; } }
 @keyframes frame-draw { from { clip-path: inset(0 100% 100% 0); } to { clip-path: inset(0); } }

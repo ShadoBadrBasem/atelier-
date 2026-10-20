@@ -7,6 +7,9 @@ import { MotionLayer } from "@/components/site/MotionLayer";
 import { CollectionTransition } from "@/components/site/CollectionTransition";
 import { getPublicGowns } from "@/lib/public/content";
 
+// Public content stays current when gowns are published in the admin.
+export const dynamic = "force-dynamic";
+
 type Step = { title: string; body: string };
 type Question = { q: string; a: string };
 

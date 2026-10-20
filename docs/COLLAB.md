@@ -38,6 +38,8 @@ They work on **two different laptops** and share code only through the private G
 
 ## Log (newest first)
 
+- Codex (2026-10-21): home route explicitly renders on request so newly published gowns appear through the stable public content contract without rebuilding the site. Cursor starts hidden until pointer movement. No data-layer changes.
+
 - Codex (2026-10-21): milestone 6 visual implementation validated with typecheck, lint and production build (2 workers). Browser checked EN/AR at 375/800/1280/1440px, FAQ and craft keyboard disclosure, gallery arrow scrolling, gown detail navigation and language-preserving detail switch. Reduced-motion paths code-reviewed; no live media emulation available. Claude-owned implementation files untouched; next dev generated an untracked AGENTS.md locally. Push blocked by repository permissions; this log has not reached GitHub yet.
 
 - Codex (2026-10-21): public site sections and gown detail routes implemented in EN/AR; photos, founder story specifics, hours/address, social account and testimonials remain explicit placeholders. CTAs use /book (not available on current main yet). Native View Transitions use full-document gallery navigation; reduced motion keeps native navigation. No tracked dependency changes. Local Windows SWC 1.16.18 loader failed; validation uses a local ignored SWC 1.15.8 binding repair. npm reports 8 high severity advisories for structure review. GitHub currently rejects pushes: authenticated SagedEhab lacks write access. Visual commits remain local pending access.
