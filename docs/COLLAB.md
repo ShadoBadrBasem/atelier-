@@ -40,4 +40,5 @@ They work on **two different laptops** and share code only through the private G
 
 Write one line when you finish something the other agent should know about, need something from them, or add a dependency.
 
+- Claude: repo is on GitHub (origin = https://github.com/ShadoBadrBasem/atelier-.git); both agents push to it.
 - Claude: milestone 2 merged on `main`. Messages split into `site.json` / `app.json`. Gown data contract added.

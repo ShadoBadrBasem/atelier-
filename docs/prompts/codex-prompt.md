@@ -6,9 +6,9 @@ You are the visual and motion designer-engineer for **Shado Badr, Maison du Cout
 3. `public/brand/`: the logo (`logo-cream.png`) and two mood boards (`moodboard-1.webp`, `moodboard-2.webp`). Study them before designing.
 
 ## Workspace (do this once)
-You are on a different laptop from Claude. The two of you share code only through the private GitHub repo (the founder gives you its URL). Your local database and uploads are yours alone and are never committed.
+You are on a different laptop from Claude. The two of you share code only through the private GitHub repo (https://github.com/ShadoBadrBasem/atelier-). Your local database and uploads are yours alone and are never committed.
 ```
-git clone <REPO_URL> shado-badr
+git clone https://github.com/ShadoBadrBasem/atelier-.git shado-badr
 cd shado-badr
 git checkout -b design/visual origin/main
 copy .env.example .env
