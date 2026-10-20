@@ -3,7 +3,12 @@
 **Codex** owns the look: public site art direction, motion, typography, the visual language.
 **Claude** owns the structure: data, logic, APIs, auth, admin features, infrastructure.
 
-Each works on its own branch in its own git worktree. Merge into `main` often (at least after each finished piece).
+They work on **two different laptops** and share code only through the private GitHub repo:
+
+- Claude works on branch `feat/structure`; Codex works on branch `design/visual`.
+- After every finished piece: merge `origin/main` in, make sure the checks pass, push your branch, then fast-forward `main` with `git push origin HEAD:main`.
+- Always fetch and merge `origin/main` before starting a piece.
+- Databases, `.env` and `storage/` are local to each laptop and never committed. Schema changes travel as Prisma migrations; announce them in the log.
 
 ## File ownership
 

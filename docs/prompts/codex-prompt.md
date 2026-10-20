@@ -6,19 +6,36 @@ You are the visual and motion designer-engineer for **Shado Badr, Maison du Cout
 3. `public/brand/`: the logo (`logo-cream.png`) and two mood boards (`moodboard-1.webp`, `moodboard-2.webp`). Study them before designing.
 
 ## Workspace (do this once)
-Work in your own git worktree so you never collide with Claude's working copy:
+You are on a different laptop from Claude. The two of you share code only through the private GitHub repo (the founder gives you its URL). Your local database and uploads are yours alone and are never committed.
 ```
-cd "E:\erp and website"
-git worktree add "E:\shado-design" -b design/visual main
-cd "E:\shado-design"
-copy "E:\erp and website\.env" .env
-copy "E:\erp and website\prisma\dev.db" prisma\dev.db
+git clone <REPO_URL> shado-badr
+cd shado-badr
+git checkout -b design/visual origin/main
+copy .env.example .env
+```
+Fill in `.env`:
+- `AUTH_SECRET`: any random string of 32+ characters.
+- `OWNER_EMAIL` / `OWNER_PASSWORD`: your own local test login.
+- Leave `DATABASE_URL` as is.
+
+Then:
+```
 npm install
-npm run dev -- -p 3000
+npx prisma migrate dev
+npm run db:seed
+npm run dev
 ```
 On Windows, if npm fails with `spawn cmd.exe ENOENT`, set `ComSpec=C:\Windows\System32\cmd.exe` first.
 
-**Integrating:** when a piece is done and `npm run typecheck && npm run lint && npm run build` pass, commit, then run `git merge main` (bring in Claude's work, resolve any conflicts) and `git push . HEAD:main` (fast-forward `main`). Do this at least after every section you finish. Add a line to the log in `docs/COLLAB.md` each time.
+**Before each piece of work:** `git fetch origin && git merge origin/main`, then read the log in `docs/COLLAB.md`. If Claude added a migration, run `npx prisma migrate dev`.
+
+**When a piece is done:**
+1. Run `npm run typecheck && npm run lint && npm run build` and make sure they pass.
+2. Commit, then `git fetch origin && git merge origin/main` and fix any conflicts.
+3. Re-run the checks.
+4. `git push origin design/visual`, then `git push origin HEAD:main`. If that push is rejected, Claude pushed first: fetch and merge again, then retry.
+
+Do this at least after every section you finish. Add a line to the log in `docs/COLLAB.md` each time. The log reaches Claude only once you push.
 
 ## Stack facts (this is newer than you may expect)
 - Next.js 16 App Router. Middleware is now `src/proxy.ts` (Claude owns it). `params` and `searchParams` are Promises. Use the generated `PageProps<"/[locale]">` / `LayoutProps` types (run `npx next typegen` if they are missing).

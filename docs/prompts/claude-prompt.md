@@ -6,8 +6,17 @@ You are continuing the build of **Shado Badr, Maison du Couture**: a bilingual (
 3. `git log`: milestones 1 (foundation) and 2 (admin core) are done on `main`.
 
 ## Workspace
-Work in `E:\erp and website` on a branch: `git checkout -b feat/structure main`. Run the dev server on port 3001. Codex works in a separate worktree (`E:\shado-design`, branch `design/visual`).
-**Integrating:** when a piece is done and `npm run typecheck && npm run lint && npm test && npm run build` pass, commit, then run `git merge main` (bring in Codex's work) and `git push . HEAD:main` (fast-forward `main`). Do this after every finished piece and log it in `docs/COLLAB.md`.
+Work in `E:\erp and website` on a branch: `git checkout -b feat/structure main`. Codex works on a **different laptop** on branch `design/visual`. You share code only through the private GitHub repo (`origin`). Each laptop has its own local database and uploads, and those are never committed.
+
+**Before each piece of work:** `git fetch origin && git merge origin/main`, then read the log in `docs/COLLAB.md`.
+
+**When a piece is done:**
+1. Run `npm run typecheck && npm run lint && npm test && npm run build` and make sure they pass.
+2. Commit, then `git fetch origin && git merge origin/main` and fix any conflicts.
+3. Re-run the checks.
+4. `git push origin feat/structure`, then `git push origin HEAD:main`. If that push is rejected, Codex pushed first: fetch and merge again, then retry.
+
+Log every finished piece in `docs/COLLAB.md`. The log reaches Codex only once you push. When you add a Prisma migration, say so in the log so Codex runs `npx prisma migrate dev`. When you change `.env.example`, list the new variables.
 
 ## What exists (don't rebuild)
 - Next.js 16 (middleware is `src/proxy.ts`; `params` are Promises), Tailwind v4, next-intl (`messages/{locale}/site.json` belongs to Codex, `app.json` is yours), Prisma on SQLite (Postgres-compatible, no enums, money as integer piasters), and Auth.js credentials with a single owner.
