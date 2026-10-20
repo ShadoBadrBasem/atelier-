@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "title": "Shado Badr, Maison du Couture",
+    "description": "Bespoke evening and bridal gowns, made to measure in Cairo."
+  },
+  "nav": { "maison": "The Maison", "collection": "Collection", "journey": "The Journey", "book": "Book a Consultation" },
+  "hero": {
+    "tagline": "Gowns made for one woman, once.",
+    "cta": "Book a Private Consultation"
+  },
+  "lang": { "switch": "العربية" },
+  "whatsapp": { "label": "Speak with the atelier" }
+}

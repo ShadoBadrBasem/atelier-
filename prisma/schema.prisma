@@ -1,0 +1,322 @@
+// SQLite for local dev. Kept Postgres-compatible: no enums, no SQLite-only types.
+// To move to Postgres: change `provider` and DATABASE_URL, then `prisma migrate`.
+// All money fields are integer piasters (1 EGP = 100). Never floats.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  whatsapp  String? // international format, digits only
+  email     String?
+  language  String   @default("en") // en | ar
+  eventType String? // bridal | evening
+  eventDate DateTime?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  measurements    Measurement[]
+  orders          Order[]
+  appointments    Appointment[]
+  attachments     Attachment[]
+  tasks           Task[]
+  messages        MessageLog[]
+  bookingRequests BookingRequest[]
+}
+
+// Append-only: a new row per measuring session, never overwritten.
+model Measurement {
+  id       String   @id @default(cuid())
+  clientId String
+  version  Int
+  takenAt  DateTime @default(now())
+  data     Json // { bust: 92, waist: 70, ... } in cm
+  notes    String?
+  client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, version])
+}
+
+model Order {
+  id    String @id @default(cuid())
+  code  String @unique // e.g. SB-0001
+  clientId String
+  title String
+  kind  String @default("bridal") // bridal | evening
+  stage String @default("inquiry") // inquiry|design|fabric|pattern|fitting1|fitting2|finishing|ready|delivered
+  eventDate DateTime?
+  notes String?
+
+  // Pricing (piasters)
+  listPrice      Int     @default(0)
+  discountKind   String  @default("none") // none | family_friends | other
+  discountMode   String  @default("percent") // percent | amount
+  discountValue  Int     @default(0) // percent => basis points (10% = 1000); amount => piasters
+  discountReason String?
+  finalPrice     Int     @default(0) // snapshot, recomputed on every pricing write
+
+  // Payment schedule
+  depositAmount  Int       @default(0)
+  depositDueDate DateTime?
+  balanceDueDate DateTime?
+
+  coverAttachmentId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client      Client          @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  costs       OrderCost[]
+  stageLogs   OrderStageLog[]
+  materials   OrderMaterial[]
+  payments    Payment[]
+  appointments Appointment[]
+  attachments Attachment[]
+  tasks       Task[]
+  tokens      TrackingToken[]
+  messages    MessageLog[]
+}
+
+model OrderCost {
+  id          String   @id @default(cuid())
+  orderId     String
+  category    String // labor | outsourced | other  (materials come from OrderMaterial)
+  description String
+  amount      Int
+  incurredAt  DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model OrderStageLog {
+  id        String   @id @default(cuid())
+  orderId   String
+  stage     String
+  enteredAt DateTime @default(now())
+  note      String?
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model OrderMaterial {
+  id       String        @id @default(cuid())
+  orderId  String
+  itemId   String
+  quantity Float
+  unitCost Int // snapshot of item price at assignment time
+  usedAt   DateTime      @default(now())
+  order    Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  item     InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  orderId   String
+  amount    Int
+  paidAt    DateTime @default(now())
+  method    String   @default("cash") // cash | instapay | bank | other
+  isDeposit Boolean  @default(false)
+  note      String?
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id        String   @id @default(cuid())
+  clientId  String?
+  orderId   String?
+  type      String // consultation|measurements|fitting1|fitting2|fitting3|final_fitting|delivery
+  startsAt  DateTime
+  endsAt    DateTime
+  status    String   @default("scheduled") // scheduled | done | cancelled | no_show
+  notes     String?
+  createdAt DateTime @default(now())
+  client    Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([startsAt])
+}
+
+model AvailabilityRule {
+  id            String  @id @default(cuid())
+  weekday       Int // 0 = Sunday ... 6 = Saturday
+  startTime     String // "HH:mm" Cairo time
+  endTime       String
+  slotMinutes   Int     @default(60)
+  bufferMinutes Int     @default(30)
+  maxPerDay     Int     @default(4)
+  active        Boolean @default(true)
+
+  @@unique([weekday])
+}
+
+model BlackoutDate {
+  id     String @id @default(cuid())
+  date   String @unique // yyyy-mm-dd, Cairo calendar day
+  reason String?
+}
+
+model BookingRequest {
+  id             String   @id @default(cuid())
+  name           String
+  phone          String
+  email          String?
+  language       String   @default("en")
+  occasion       String // bridal | evening
+  eventDate      DateTime?
+  notes          String?
+  preferredSlots Json // [{ start: ISO }]
+  status         String   @default("pending") // pending | confirmed | declined
+  clientId       String?
+  createdAt      DateTime @default(now())
+  client         Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  attachments    Attachment[]
+}
+
+model Task {
+  id         String    @id @default(cuid())
+  title      String
+  notes      String?
+  dueDate    DateTime?
+  priority   Int       @default(2) // 1 high, 2 normal, 3 low
+  done       Boolean   @default(false)
+  doneAt     DateTime?
+  recurrence String? // daily | weekly | monthly | null
+  clientId   String?
+  orderId    String?
+  createdAt  DateTime  @default(now())
+  client     Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  order      Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+}
+
+model Supplier {
+  id    String @id @default(cuid())
+  name  String
+  phone String?
+  notes String?
+  items InventoryItem[]
+  purchases PurchaseLog[]
+}
+
+model InventoryItem {
+  id           String   @id @default(cuid())
+  name         String
+  category     String // fabric | lining | thread | beads | zipper | packaging | other
+  unit         String // m | pcs | spool | box ...
+  stock        Float    @default(0)
+  reorderLevel Float    @default(0)
+  lastPrice    Int      @default(0) // piasters per unit
+  supplierId   String?
+  supplier     Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  purchases    PurchaseLog[]
+  usages       OrderMaterial[]
+}
+
+model PurchaseLog {
+  id          String   @id @default(cuid())
+  itemId      String
+  supplierId  String?
+  quantity    Float
+  unitPrice   Int
+  total       Int
+  purchasedAt DateTime @default(now())
+  item        InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  supplier    Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  expense     Expense?
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  category    String // materials|labor|rent|utilities|marketing|packaging|other
+  amount      Int
+  spentAt     DateTime @default(now())
+  description String?
+  purchaseId  String?  @unique
+  purchase    PurchaseLog? @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+}
+
+model MessageTemplate {
+  id       String @id @default(cuid())
+  key      String // booking_confirmed | reminder_24h | fitting_ready | balance_due | delivery_ready | progress_update
+  language String // en | ar
+  body     String // with {{name}}, {{date}}, {{time}}, {{link}}, {{amount}} placeholders
+
+  @@unique([key, language])
+}
+
+model MessageLog {
+  id          String   @id @default(cuid())
+  clientId    String?
+  orderId     String?
+  templateKey String
+  channel     String   @default("whatsapp_link")
+  toPhone     String
+  body        String
+  sentAt      DateTime @default(now())
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  order       Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+}
+
+// Only the SHA-256 hash of the token is stored; the raw token exists only in the link.
+model TrackingToken {
+  id        String    @id @default(cuid())
+  orderId   String
+  tokenHash String    @unique
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+  expiresAt DateTime?
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Gown {
+  id        String  @id @default(cuid())
+  slug      String  @unique
+  kind      String // bridal | evening
+  titleEn   String
+  titleAr   String
+  descEn    String
+  descAr    String
+  fabricEn  String?
+  fabricAr  String?
+  sortOrder Int     @default(0)
+  visible   Boolean @default(true)
+  attachments Attachment[]
+}
+
+model Attachment {
+  id              String   @id @default(cuid())
+  clientId        String?
+  orderId         String?
+  gownId          String?
+  bookingRequestId String?
+  category        String   @default("other") // sketch|inspiration|fabric|pattern|fitting|wip|final|other
+  caption         String?
+  stage           String?
+  isCover         Boolean  @default(false)
+  sharedOnTracking Boolean @default(false)
+  sortOrder       Int      @default(0)
+  mime            String
+  sizeBytes       Int
+  originalPath    String // relative to STORAGE_DIR, never under public/
+  optimizedPath   String?
+  thumbPath       String?
+  takenAt         DateTime @default(now())
+  createdAt       DateTime @default(now())
+  client          Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  order           Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  gown            Gown?    @relation(fields: [gownId], references: [id], onDelete: SetNull)
+  bookingRequest  BookingRequest? @relation(fields: [bookingRequestId], references: [id], onDelete: SetNull)
+}

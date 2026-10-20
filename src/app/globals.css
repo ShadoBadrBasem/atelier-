@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --oxblood: #480903;
+  --olive: #937f24;
+  --sand: #e5d1a4;
+  --copper: #ce793a;
+  --burnt: #b64b12;
+  --cream: #ede5d6;
+  /* AA on cream: olive/copper are for fine lines and large text only. */
+  --ink: var(--oxblood);
+  --ink-soft: #6b3a33;
+  --bg: var(--cream);
+}
+
+@theme inline {
+  --color-oxblood: var(--oxblood);
+  --color-olive: var(--olive);
+  --color-sand: var(--sand);
+  --color-copper: var(--copper);
+  --color-burnt: var(--burnt);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --font-display: var(--font-display), "Bodoni MT", serif;
+  --font-serif: var(--font-serif), Georgia, serif;
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-arabic: var(--font-arabic), "Noto Naskh Arabic", serif;
+}
+
+html {
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-serif), Georgia, serif;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+html[dir="rtl"] body {
+  font-family: var(--font-arabic), serif;
+  line-height: 1.8;
+}
+
+/* Inputs at 16px+ to stop iOS zoom */
+input, select, textarea { font-size: 16px; }
+
+/* Frame hairline motif, reused as a design device */
+.frame {
+  position: relative;
+}
+.frame::before,
+.frame::after {
+  content: "";
+  position: absolute;
+  width: 40%;
+  height: 40%;
+  pointer-events: none;
+  border: 0 solid var(--olive);
+}
+.frame::before { top: 0; inset-inline-start: 0; border-top-width: 1px; border-inline-start-width: 1px; }
+.frame::after { bottom: 0; inset-inline-end: 0; border-bottom-width: 1px; border-inline-end-width: 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
