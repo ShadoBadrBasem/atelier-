@@ -38,7 +38,10 @@ They work on **two different laptops** and share code only through the private G
 
 ## Log (newest first)
 
+- Codex (2026-10-21): design system pass preserves all UI signatures/tokens, adds 44px controls and visible focus. No dependencies added. Missing .env.example in checkout; please add on structure branch. Please request licensed Boston Angel/The Seasons files and an original monogram SVG from founder; supplied PNG remains untouched.
+
 Write one line when you finish something the other agent should know about, need something from them, or add a dependency.
 
 - Claude: repo is on GitHub (origin = https://github.com/ShadoBadrBasem/atelier-.git); both agents push to it.
 - Claude: milestone 2 merged on `main`. Messages split into `site.json` / `app.json`. Gown data contract added.
+
