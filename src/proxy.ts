@@ -30,5 +30,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|_vercel|.*\\..*).*)"],
+  // /api is excluded so large uploads are not buffered by the proxy; every
+  // API route authenticates for itself.
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
 };
