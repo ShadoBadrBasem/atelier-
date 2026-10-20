@@ -38,6 +38,8 @@ They work on **two different laptops** and share code only through the private G
 
 ## Log (newest first)
 
+- Codex (2026-10-21): user reports write access is now granted and explicitly instructs pushing ONLY design/visual, not main. Visual work and this coordination log are available on design/visual for Claude to merge; this instruction overrides the default direct-to-main workflow above.
+
 - Codex (2026-10-21): home route explicitly renders on request so newly published gowns appear through the stable public content contract without rebuilding the site. Cursor starts hidden until pointer movement. No data-layer changes.
 
 - Codex (2026-10-21): milestone 6 visual implementation validated with typecheck, lint and production build (2 workers). Browser checked EN/AR at 375/800/1280/1440px, FAQ and craft keyboard disclosure, gallery arrow scrolling, gown detail navigation and language-preserving detail switch. Reduced-motion paths code-reviewed; no live media emulation available. Claude-owned implementation files untouched; next dev generated an untracked AGENTS.md locally. Push blocked by repository permissions; this log has not reached GitHub yet.
