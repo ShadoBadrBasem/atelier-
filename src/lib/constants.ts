@@ -63,8 +63,8 @@ export const MEASUREMENT_FIELDS = [
 
 export const PAYMENT_STATUS_STYLE: Record<string, { label: string; cls: string }> = {
   unpaid: { label: "Unpaid", cls: "bg-sand text-oxblood" },
-  deposit_paid: { label: "Deposit paid", cls: "bg-olive/20 text-oxblood" },
-  partial: { label: "Partially paid", cls: "bg-copper/25 text-oxblood" },
-  paid: { label: "Paid in full", cls: "bg-olive text-cream" },
+  deposit_paid: { label: "Deposit paid", cls: "bg-copper text-oxblood" },
+  partial: { label: "Partially paid", cls: "bg-copper/50 text-oxblood" },
+  paid: { label: "Paid in full", cls: "bg-[#7a6a1d] text-cream" },
   overdue: { label: "Overdue", cls: "bg-burnt text-cream" },
 };

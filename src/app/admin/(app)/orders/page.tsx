@@ -21,7 +21,7 @@ type Row = Awaited<ReturnType<typeof ordersWithFinance>>[number];
 function OrderCard({ o }: { o: Row }) {
   const ps = PAYMENT_STATUS_STYLE[o.finance.status];
   return (
-    <Link href={`/admin/orders/${o.id}`} className={`block border border-olive/20 bg-[#f6f1e7] p-3 shadow-sm transition-shadow hover:shadow-md ${deadlineCls(o.eventDate, o.stage)}`}>
+    <Link href={`/admin/orders/${o.id}`} className={`block border border-olive/20 bg-[#fbf7ef] p-3 shadow-sm transition-shadow hover:shadow-md ${deadlineCls(o.eventDate, o.stage)}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate font-display text-base">{o.title}</div>
@@ -67,7 +67,7 @@ export default async function OrdersPage({
           {STAGES.map((s) => {
             const col = orders.filter((o) => o.stage === s.key);
             return (
-              <section key={s.key} className="w-64 shrink-0 snap-start border-t-2 border-oxblood/70 bg-sand/30 p-2">
+              <section key={s.key} className="w-64 shrink-0 snap-start border-t-[3px] border-copper bg-[#f1e6cf] p-2">
                 <h2 className="mb-2 flex justify-between px-1 text-xs uppercase tracking-[0.2em]">
                   {s.label}<span>{col.length}</span>
                 </h2>

@@ -58,7 +58,7 @@ export default async function ClientsPage({
                       {acct.balance > 0 && <span className="text-sm tabular-nums">{formatEgp(acct.balance)} due</span>}
                       <div className="flex flex-wrap justify-end gap-1">
                         {acct.depositOutstanding > 0 && <Badge cls="bg-copper/30 text-oxblood">Deposit owed</Badge>}
-                        {disc && <Badge cls="bg-olive/20 text-oxblood">{disc.replace(" per order", "")}</Badge>}
+                        {disc && <Badge cls="bg-oxblood text-cream">{disc.replace(" per order", "")}</Badge>}
                         {c.eventType && <Badge>{c.eventType}</Badge>}
                       </div>
                     </div>

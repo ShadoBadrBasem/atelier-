@@ -110,7 +110,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                           <td>
                             {o.depositAmount > 0 && (owed > 0
                               ? <Badge cls={o.depositDueDate && o.depositDueDate < now ? "bg-burnt text-cream" : "bg-sand text-oxblood"}>{o.depositDueDate && o.depositDueDate < now ? "Overdue" : "Owed"}</Badge>
-                              : <Badge cls="bg-olive text-cream">Paid</Badge>)}
+                              : <Badge cls="bg-[#7a6a1d] text-cream">Paid</Badge>)}
                           </td>
                         </tr>
                       );
