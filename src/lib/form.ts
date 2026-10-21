@@ -31,3 +31,12 @@ export function normalizePhone(raw: string | null): string | null {
   if (d.startsWith("0")) d = "20" + d.slice(1);
   return d || null;
 }
+
+/** Decimal quantity ("2.5", "2,5") -> number >= 0. Empty -> fallback. */
+export function qty(fd: FormData, k: string, fallback = 0): number {
+  const raw = str(fd, k).replace(",", ".");
+  if (!raw) return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) throw new Error(`Invalid quantity for ${k}`);
+  return n;
+}

@@ -9,8 +9,12 @@ import { fmtDate, fmtDateTime, toDateInput } from "@/lib/cairo";
 import { formatEgp } from "@/lib/money";
 import { orderFinance } from "@/lib/domain/orderFinance";
 import { stageColor } from "@/lib/phaseColors";
+import { WhatsAppSend } from "@/components/admin/WhatsAppSend";
+import { composeOrder } from "@/lib/whatsapp/compose";
+import { loadOverrides } from "@/lib/whatsapp/overrides";
+import { templateLabel } from "@/lib/whatsapp/templates";
 import { COST_CATEGORIES, PAYMENT_METHODS, PAYMENT_STATUS_STYLE, STAGES, apptLabel, stageLabel } from "@/lib/constants";
-import { addCost, addPayment, deleteCost, deletePayment, savePricing, setStage, updateOrderInfo } from "../actions";
+import { addCost, addMaterial, addPayment, deleteCost, deletePayment, removeMaterial, savePricing, setStage, updateOrderInfo } from "../actions";
 
 const methodLabel = (k: string) => PAYMENT_METHODS.find((m) => m.key === k)?.label ?? k;
 const costLabel = (k: string) => COST_CATEGORIES.find((m) => m.key === k)?.label ?? k;
@@ -29,10 +33,19 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
     },
   });
   if (!o) notFound();
+  const overrides = await loadOverrides();
+  const supplies = await db.inventoryItem.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, unit: true, stock: true, lastPrice: true } });
   const f = orderFinance(o, new Date());
   const ps = PAYMENT_STATUS_STYLE[f.status];
   const stageIdx = STAGES.findIndex((s) => s.key === o.stage);
   const egpNum = (p: number) => p / 100;
+  const nextAppointment = o.appointments.find((a) => a.status === "scheduled" && a.startsAt > new Date()) ?? null;
+  const waOptions = composeOrder({ order: o, finance: f, payments: o.payments, nextAppointment }, o.client, overrides).map((m) => ({
+    key: m.key,
+    label: templateLabel(m.key),
+    body: m.body,
+    orderId: o.id,
+  }));
 
   return (
     <main className="flex flex-col gap-5">
@@ -40,7 +53,12 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         eyebrow={`Order ${o.code}`}
         title={o.title}
         sub={`${o.code} · ${o.kind} · ${o.eventDate ? `event ${fmtDate(o.eventDate)}` : "no event date"}`}
-        action={<Badge cls={ps.cls}>{ps.label}</Badge>}
+        action={
+          <>
+            <Badge cls={ps.cls}>{ps.label}</Badge>
+            <Link href={`/admin/invoice/${o.id}`} className={btnGhostCls}>Invoice</Link>
+          </>
+        }
       />
       <p className="-mt-3 text-sm">
         Client: <Link className="underline" href={`/admin/clients/${o.client.id}`}>{o.client.name}</Link>
@@ -141,6 +159,20 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         )}
       </Panel>
 
+      <Panel
+        title="Send on WhatsApp"
+        eyebrow="Reminders & invoice"
+        action={<Link href="/admin/settings/messages" className="text-sm underline underline-offset-4">Edit wording</Link>}
+      >
+        {o.client.whatsapp ? (
+          <WhatsAppSend to={o.client.whatsapp} clientId={o.client.id} options={waOptions} rtl={o.client.language === "ar"} />
+        ) : (
+          <p className="at-muted text-sm">
+            Add {o.client.name}&apos;s WhatsApp number to send messages. <Link href={`/admin/clients/${o.client.id}/edit`} className="underline">Edit client</Link>
+          </p>
+        )}
+      </Panel>
+
       <Panel title="Dress cost">
         <dl className="mb-3 grid grid-cols-2 gap-1 text-sm md:grid-cols-4">
           <dt className="text-ink-soft">Materials (from inventory)</dt><dd className="tabular-nums">{formatEgp(f.materials)}</dd>
@@ -148,11 +180,40 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           <dt className="text-ink-soft">Other</dt><dd className="tabular-nums">{formatEgp(f.other)}</dd>
           <dt className="font-display">Total</dt><dd className="font-display tabular-nums">{formatEgp(f.totalCost)}</dd>
         </dl>
+        <p className="at-eyebrow mb-2">Materials from stock</p>
         {o.materials.length > 0 && (
-          <ul className="mb-3 text-sm text-ink-soft">
-            {o.materials.map((m) => <li key={m.id}>{m.item.name}: {m.quantity} {m.item.unit} × {formatEgp(m.unitCost)}</li>)}
+          <ul className="at-rows mb-3">
+            {o.materials.map((m) => (
+              <li key={m.id} className="at-row">
+                <span className="text-sm">
+                  <Link href={`/admin/supplies/${m.item.id}`} className="underline-offset-4 hover:underline">{m.item.name}</Link>: {m.quantity} {m.item.unit} × {formatEgp(m.unitCost)}
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="tabular-nums">{formatEgp(Math.round(m.quantity * m.unitCost))}</span>
+                  <form action={removeMaterial.bind(null, o.id, m.id)}><button className={btnDangerCls} aria-label="Remove material and return it to stock">×</button></form>
+                </span>
+              </li>
+            ))}
           </ul>
         )}
+        {supplies.length === 0 ? (
+          <p className="at-muted mb-4 text-sm">Add fabrics and trims in <Link href="/admin/supplies" className="underline">Supplies</Link> to use them here.</p>
+        ) : (
+          <form action={addMaterial.bind(null, o.id)} className="mb-5 grid grid-cols-2 gap-2 md:grid-cols-[1fr_9rem_10rem_auto] md:items-end">
+            <div className="col-span-2 md:col-span-1">
+              <Field label="Supply">
+                <select name="itemId" required defaultValue="" className={inputCls}>
+                  <option value="" disabled>Choose…</option>
+                  {supplies.map((i) => <option key={i.id} value={i.id}>{i.name} · {i.stock} {i.unit} left · {formatEgp(i.lastPrice)}/{i.unit}</option>)}
+                </select>
+              </Field>
+            </div>
+            <Field label="Quantity"><input name="quantity" required inputMode="decimal" className={inputCls} /></Field>
+            <Field label="Date"><input name="usedAt" type="date" defaultValue={toDateInput(new Date())} className={inputCls} /></Field>
+            <button className={btnGhostCls}>Use from stock</button>
+          </form>
+        )}
+        <p className="at-eyebrow mb-2">Labor & other costs</p>
         <form action={addCost.bind(null, o.id)} className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-5 md:items-end">
           <Field label="Type">
             <select name="category" className={inputCls}>{COST_CATEGORIES.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}</select>
@@ -173,7 +234,6 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-xs text-ink-soft">Materials are assigned from Supplies (milestone 5), which deducts stock and adds the cost here.</p>
       </Panel>
 
       <Panel title="Photos & design files">

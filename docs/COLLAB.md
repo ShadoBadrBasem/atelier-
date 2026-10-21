@@ -51,6 +51,7 @@ They work on **two different laptops** and share code only through the private G
 
 Write one line when you finish something the other agent should know about, need something from them, or add a dependency.
 
+- Claude (2026-10-21): milestone 5 (supplies, suppliers, costs, materials on orders) and WhatsApp one-tap messaging (templates EN/AR editable in Settings → Messages, reminders on Today, printable invoice at /admin/invoice/[id], POST /api/messages log). Admin nav gains Supplies. No schema change, no new dependencies.
 - Claude (2026-10-21): merged design/visual into main. Admin redesign at the founder's request: new admin-only stylesheet `src/app/admin/admin.css` and `src/components/admin/**`; admin pages no longer use `Card`/`PageHeader`/`Empty` from `ui.tsx` (form classes and `Field`/`Badge` still do). `ui.tsx`, `globals.css` and `NavLinks.tsx` untouched; `NavLinks` is now unused by the admin. Migration `client_discount` adds a standing discount to `Client`. No new dependencies.
 
 - Claude: repo is on GitHub (origin = https://github.com/ShadoBadrBasem/atelier-.git); both agents push to it.

@@ -144,6 +144,20 @@ a.at-row:hover { background: var(--paper-deep); }
 .at-login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: linear-gradient(var(--olive-deep) 0 34%, var(--sand-bg) 34%); }
 .at-login-card { width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 36px 28px; background: var(--cream); border: 1px solid var(--rule); box-shadow: 0 24px 60px -36px #48090366; }
 
+/* Invoice (printable) */
+.invoice-page { min-height: 100dvh; padding: 24px 16px 48px; }
+.invoice-tools { max-width: 820px; margin: 0 auto 16px; display: flex; justify-content: space-between; gap: 12px; }
+.invoice-sheet { max-width: 820px; margin: 0 auto; padding: 36px clamp(20px, 5vw, 56px); background: var(--cream); border-radius: 18px; box-shadow: 0 24px 60px -36px #48090366; }
+.invoice-balance { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-radius: 12px; background: var(--oxblood); color: var(--cream); font-family: var(--font-display), serif; font-size: 1.4rem; }
+@media print {
+  @page { margin: 14mm; }
+  .atelier { background: #fff; }
+  .invoice-page { padding: 0; }
+  .invoice-tools { display: none; }
+  .invoice-sheet { box-shadow: none; border-radius: 0; padding: 0; background: #fff; }
+  .invoice-balance { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
 /* Softer, more fluid shapes */
 .at-title { border-radius: 18px; }
 @media (max-width: 767px) { .at-title { border-radius: 0 0 18px 18px; } }
@@ -155,7 +169,7 @@ a.at-row:hover { background: var(--paper-deep); }
 .at-login-card { border-radius: 20px; }
 .at-nav-link { border-radius: 10px; }
 .at-bottom { padding: 6px 6px env(safe-area-inset-bottom); }
-.at-bottom a { min-height: 52px; border-radius: 10px; }
+.at-bottom a { min-width: 0; min-height: 52px; border-radius: 10px; letter-spacing: .06em; font-size: 9.5px; }
 /* Form controls and buttons from ui.tsx all carry min-h-11; round them in the admin only. */
 .atelier .min-h-11 { border-radius: 10px; }
 

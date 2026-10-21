@@ -7,6 +7,9 @@ import { addDaysKey, fmtDate, fmtTime, fmtWeekday, startOfDay, todayKey } from "
 import { formatEgp } from "@/lib/money";
 import { PAYMENT_STATUS_STYLE, apptLabel, stageLabel } from "@/lib/constants";
 import { ordersWithFinance } from "@/lib/orderQueries";
+import { WaQuickLink } from "@/components/admin/WhatsAppSend";
+import { composeAppointment, composeOrder } from "@/lib/whatsapp/compose";
+import { loadOverrides } from "@/lib/whatsapp/overrides";
 
 export default async function Dashboard() {
   const tk = todayKey();
@@ -19,7 +22,7 @@ export default async function Dashboard() {
 
   const [todayAppts, upcoming, tasks, pending, orders, inventory, monthPayments, monthCosts, monthExpenses] = await Promise.all([
     db.appointment.findMany({ where: { startsAt: { gte: today, lt: tomorrow }, status: { not: "cancelled" } }, orderBy: { startsAt: "asc" }, include: { client: { select: { name: true } } } }),
-    db.appointment.findMany({ where: { startsAt: { gte: tomorrow, lt: in7 }, status: "scheduled" }, orderBy: { startsAt: "asc" }, include: { client: { select: { name: true } } } }),
+    db.appointment.findMany({ where: { startsAt: { gte: tomorrow, lt: in7 }, status: "scheduled" }, orderBy: { startsAt: "asc" }, include: { client: { select: { id: true, name: true, whatsapp: true, language: true } } } }),
     db.task.findMany({ where: { done: false, dueDate: { lt: tomorrow } }, orderBy: [{ dueDate: "asc" }, { priority: "asc" }], include: { order: { select: { id: true, code: true } }, client: { select: { id: true, name: true } } } }),
     db.bookingRequest.count({ where: { status: "pending" } }),
     ordersWithFinance({ stage: { not: "delivered" } }),
@@ -36,8 +39,34 @@ export default async function Dashboard() {
       (!o.finance.depositPaid && o.depositAmount > 0 && o.depositDueDate && o.depositDueDate < in7),
   );
   const lowStock = inventory.filter((i) => i.stock <= i.reorderLevel);
+
+  // Reminders: tomorrow's appointments and payments coming due, ready to send on WhatsApp.
+  const dayAfter = startOfDay(addDaysKey(tk, 2));
+  const [overrides, recentLogs] = await Promise.all([
+    loadOverrides(),
+    db.messageLog.findMany({ where: { sentAt: { gte: startOfDay(addDaysKey(tk, -3)) } }, select: { clientId: true, orderId: true, templateKey: true, sentAt: true } }),
+  ]);
+  const sentAt = (key: string, clientId: string | null, orderId: string | null) =>
+    recentLogs.find((l) => l.templateKey === key && l.clientId === clientId && (orderId ? l.orderId === orderId : true))?.sentAt;
+  const reminders = [
+    ...upcoming
+      .filter((a) => a.startsAt < dayAfter && a.client?.whatsapp)
+      .map((a) => {
+        const msg = composeAppointment(a, a.client!, overrides).find((m) => m.key === "reminder_24h")!;
+        return { id: a.id, href: `/admin/calendar/${a.id}`, who: a.client!.name, what: `${apptLabel(a.type)} tomorrow ${fmtTime(a.startsAt)}`, to: a.client!.whatsapp!, clientId: a.client!.id, orderId: a.orderId, msg, sent: sentAt(msg.key, a.client!.id, null) };
+      }),
+    ...paymentAlerts
+      .filter((o) => o.client.whatsapp)
+      .flatMap((o) => {
+        const msgs = composeOrder({ order: o, finance: o.finance, payments: [] }, o.client, overrides);
+        const msg = msgs.find((m) => m.key === "deposit_due") ?? msgs.find((m) => m.key === "balance_due");
+        if (!msg) return [];
+        const what = msg.key === "deposit_due" ? "Deposit due" : `${formatEgp(o.finance.balance)} balance due`;
+        return [{ id: o.id, href: `/admin/orders/${o.id}`, who: o.client.name, what: `${what} · ${o.code}`, to: o.client.whatsapp!, clientId: o.client.id, orderId: o.id, msg, sent: sentAt(msg.key, o.client.id, o.id) }];
+      }),
+  ];
   const revenue = monthPayments._sum.amount ?? 0;
-  // Order costs + general expenses. Purchases are logged as expenses in milestone 5.
+  // Order costs + general expenses (supply purchases are logged as expenses).
   const costs = (monthCosts._sum.amount ?? 0) + (monthExpenses._sum.amount ?? 0);
 
   return (
@@ -57,6 +86,24 @@ export default async function Dashboard() {
         <Stat label="Costs this month" value={formatEgp(costs)} tone="copper" />
         <Stat label="Net this month" value={formatEgp(revenue - costs)} tone={revenue - costs < 0 ? "warn" : "good"} />
       </Stats>
+
+      {reminders.length > 0 && (
+        <Panel title="Reminders to send" eyebrow="WhatsApp">
+          <ul className="at-rows">
+            {reminders.map((r) => (
+              <li key={`${r.msg.key}-${r.id}`} className="at-row">
+                <Link href={r.href} className="min-w-0">
+                  <div className="at-row-title">{r.who}</div>
+                  <div className="at-row-meta">{r.what}{r.sent ? ` · sent ${fmtWeekday(r.sent)}` : ""}</div>
+                </Link>
+                <WaQuickLink to={r.to} body={r.msg.body} templateKey={r.msg.key} clientId={r.clientId} orderId={r.orderId}>
+                  {r.sent ? "Send again" : "Send reminder"}
+                </WaQuickLink>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
 
       <div className="grid gap-5 md:grid-cols-2">
         <Panel title="Agenda">

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { Logo } from "@/components/Logo";
@@ -15,8 +16,8 @@ export default async function AdminShell({ children }: { children: React.ReactNo
           <span className="at-brand-name">The Atelier</span>
         </div>
         <AdminNav variant="side" />
+        <Link href="/admin/settings/messages" className="at-signout mt-auto">WhatsApp messages</Link>
         <form
-          className="mt-auto"
           action={async () => {
             "use server";
             await signOut({ redirectTo: "/admin/login" });

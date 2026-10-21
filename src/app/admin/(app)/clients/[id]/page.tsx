@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { ClientForm } from "@/components/ClientForm";
 import { Gallery } from "@/components/Gallery";
 import { ClientDiscountForm } from "@/components/admin/ClientDiscountForm";
 import { Badge, Field, btnCls, btnGhostCls, inputCls } from "@/components/ui";
@@ -11,16 +10,29 @@ import { formatEgp } from "@/lib/money";
 import { MEASUREMENT_FIELDS, PAYMENT_METHODS, PAYMENT_STATUS_STYLE, stageLabel } from "@/lib/constants";
 import { orderFinance } from "@/lib/domain/orderFinance";
 import { clientAccount, discountLabel } from "@/lib/domain/clientAccount";
-import { addMeasurement, recordDeposit, saveClientDiscount, setDepositRequired, updateClient } from "../actions";
+import { WaQuickLink, WhatsAppSend } from "@/components/admin/WhatsAppSend";
+import { composeAppointment, composeOrder } from "@/lib/whatsapp/compose";
+import { loadOverrides } from "@/lib/whatsapp/overrides";
+import { templateLabel } from "@/lib/whatsapp/templates";
+import { addMeasurement, recordDeposit, saveClientDiscount, setDepositRequired } from "../actions";
 
 const methodLabel = (k: string) => PAYMENT_METHODS.find((m) => m.key === k)?.label ?? k;
 
-export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ClientPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ saved?: string }>;
+}) {
   const { id } = await params;
+  const { saved } = await searchParams;
   const client = await db.client.findUnique({
     where: { id },
     include: {
       measurements: { orderBy: { version: "desc" } },
+      messages: { orderBy: { sentAt: "desc" }, take: 12, include: { order: { select: { code: true } } } },
+      appointments: { where: { status: "scheduled", startsAt: { gt: new Date() } }, orderBy: { startsAt: "asc" }, take: 1 },
       orders: {
         orderBy: { createdAt: "desc" },
         include: {
@@ -46,6 +58,17 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     (a, b) => (b.depositAmount - Math.min(b.finance.paid, b.depositAmount)) - (a.depositAmount - Math.min(a.finance.paid, a.depositAmount)),
   )[0];
 
+  const overrides = await loadOverrides();
+  const nextAppt = client.appointments[0] ?? null;
+  const waOptions = [
+    ...(nextAppt ? composeAppointment(nextAppt, client, overrides).map((m) => ({ key: m.key, label: templateLabel(m.key), body: m.body, orderId: nextAppt.orderId })) : []),
+    ...openOrders.flatMap((o) =>
+      composeOrder({ order: o, finance: o.finance, payments: o.payments, nextAppointment: nextAppt }, client, overrides)
+        .filter((m) => m.key === "invoice" || m.key === "deposit_due" || m.key === "balance_due")
+        .map((m) => ({ key: m.key, label: `${templateLabel(m.key)} · ${o.code}`, body: m.body, orderId: o.id })),
+    ),
+  ];
+
   const latest = client.measurements[0];
   const latestData = (latest?.data ?? {}) as Record<string, number>;
   const contact = [client.phone, client.email].filter(Boolean).join(" · ");
@@ -58,11 +81,13 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         sub={contact || undefined}
         action={
           <>
-            {client.whatsapp && <a href={`https://wa.me/${client.whatsapp}`} target="_blank" rel="noreferrer" className={btnGhostCls}>WhatsApp</a>}
+            <Link href={`/admin/clients/${client.id}/edit`} className={btnGhostCls}>Edit details</Link>
             <Link href={`/admin/orders/new?clientId=${client.id}`} className={btnCls}>New order</Link>
           </>
         }
       />
+
+      {saved && <p role="status" className="at-callout">Changes saved.</p>}
 
       <Stats>
         <Stat label="Total value" value={formatEgp(acct.finalTotal)} hint={acct.discountTotal > 0 ? `after ${formatEgp(acct.discountTotal)} discount` : `${orders.length} order${orders.length === 1 ? "" : "s"}`} tone="ox" />
@@ -197,6 +222,36 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         </Panel>
       </div>
 
+      <Panel
+        title="WhatsApp"
+        eyebrow="Reminders & invoices"
+        action={<Link href="/admin/settings/messages" className="text-sm underline underline-offset-4">Edit wording</Link>}
+      >
+        {!client.whatsapp ? (
+          <p className="at-muted text-sm">Add her WhatsApp number to send messages. <Link href={`/admin/clients/${client.id}/edit`} className="underline">Edit details</Link></p>
+        ) : waOptions.length === 0 ? (
+          <div className="flex flex-col gap-3">
+            <p className="at-muted text-sm">Nothing to remind her about yet. Messages appear here once she has an appointment or an order.</p>
+            <WaQuickLink to={client.whatsapp} body="" templateKey="free_text" clientId={client.id}>Open chat</WaQuickLink>
+          </div>
+        ) : (
+          <WhatsAppSend to={client.whatsapp} clientId={client.id} options={waOptions} rtl={client.language === "ar"} />
+        )}
+        {client.messages.length > 0 && (
+          <details className="at-disclosure mt-4">
+            <summary>Sent messages ({client.messages.length})</summary>
+            <ul className="at-rows">
+              {client.messages.map((m) => (
+                <li key={m.id} className="py-2">
+                  <div className="text-sm">{fmtDate(m.sentAt)} · {templateLabel(m.templateKey)}{m.order ? ` · ${m.order.code}` : ""}</div>
+                  <p className="at-row-meta line-clamp-2 whitespace-pre-line" dir="auto">{m.body}</p>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </Panel>
+
       <Panel title="Orders">
         {orders.length === 0 ? (
           <Empty>No orders yet.</Empty>
@@ -226,8 +281,28 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         )}
       </Panel>
 
-      <Panel title="Details">
-        <ClientForm client={client} action={updateClient.bind(null, client.id)} submitLabel="Save" />
+      <Panel title="Details" action={<Link href={`/admin/clients/${client.id}/edit`} className={btnGhostCls}>Edit</Link>}>
+        <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            ["Phone", client.phone],
+            ["WhatsApp", client.whatsapp && `+${client.whatsapp}`],
+            ["Email", client.email],
+            ["Language", client.language === "ar" ? "Arabic" : "English"],
+            ["Occasion", client.eventType && (client.eventType === "bridal" ? "Bridal" : "Evening")],
+            ["Event date", client.eventDate && fmtDate(client.eventDate)],
+          ].map(([k, v]) => (
+            <div key={k as string}>
+              <dt className="at-eyebrow">{k}</dt>
+              <dd className="mt-1">{v || <span className="at-muted">Not set</span>}</dd>
+            </div>
+          ))}
+          {client.notes && (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <dt className="at-eyebrow">Notes</dt>
+              <dd className="mt-1 whitespace-pre-line">{client.notes}</dd>
+            </div>
+          )}
+        </dl>
       </Panel>
 
       <Panel title="Measurements" action={latest && <span className="at-muted text-sm">v{latest.version} · {fmtDate(latest.takenAt)}</span>}>

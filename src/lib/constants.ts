@@ -68,3 +68,33 @@ export const PAYMENT_STATUS_STYLE: Record<string, { label: string; cls: string }
   paid: { label: "Paid in full", cls: "bg-[#7a6a1d] text-cream" },
   overdue: { label: "Overdue", cls: "bg-burnt text-cream" },
 };
+
+export const INVENTORY_CATEGORIES = [
+  { key: "fabric", label: "Fabric" },
+  { key: "lining", label: "Lining" },
+  { key: "thread", label: "Thread" },
+  { key: "beads", label: "Beads & embellishment" },
+  { key: "zipper", label: "Zippers & closures" },
+  { key: "packaging", label: "Packaging" },
+  { key: "other", label: "Other" },
+] as const;
+export const inventoryLabel = (k: string) => INVENTORY_CATEGORIES.find((c) => c.key === k)?.label ?? k;
+
+export const UNITS = ["m", "yd", "pcs", "spool", "box", "pack", "kg", "roll"] as const;
+
+export const EXPENSE_CATEGORIES = [
+  { key: "materials", label: "Materials" },
+  { key: "labor", label: "Labor" },
+  { key: "rent", label: "Rent" },
+  { key: "utilities", label: "Utilities" },
+  { key: "marketing", label: "Marketing" },
+  { key: "packaging", label: "Packaging" },
+  { key: "other", label: "Other" },
+] as const;
+export const expenseLabel = (k: string) => EXPENSE_CATEGORIES.find((c) => c.key === k)?.label ?? k;
+
+export const STOCK_STATUS = {
+  out: { label: "Out of stock", cls: "bg-burnt text-cream" },
+  low: { label: "Reorder", cls: "bg-copper text-oxblood" },
+  ok: { label: "In stock", cls: "bg-[#7a6a1d] text-cream" },
+} as const;

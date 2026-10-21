@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { money, optDate, optStr, str } from "@/lib/form";
+import { money, optDate, optStr, qty, str } from "@/lib/form";
+import { roundQty } from "@/lib/domain/inventory";
 import { finalPrice, type DiscountKind, type DiscountMode } from "@/lib/domain/pricing";
 import { readDiscount } from "@/lib/discountForm";
 import { defaultBalanceDue } from "@/lib/domain/orderFinance";
@@ -152,4 +153,31 @@ export async function deleteCost(orderId: string, costId: string) {
   await requireUser();
   await db.orderCost.delete({ where: { id: costId, orderId } });
   revalidatePath(path(orderId));
+}
+
+/** Takes a supply off the shelf for this gown at today's price. */
+export async function addMaterial(orderId: string, fd: FormData) {
+  await requireUser();
+  const itemId = z.string().min(1, "Choose a supply").parse(str(fd, "itemId"));
+  const quantity = qty(fd, "quantity");
+  if (quantity <= 0) throw new Error("Quantity must be above zero");
+  await db.$transaction(async (tx) => {
+    const item = await tx.inventoryItem.findUniqueOrThrow({ where: { id: itemId } });
+    await tx.orderMaterial.create({ data: { orderId, itemId, quantity, unitCost: item.lastPrice, usedAt: optDate(fd, "usedAt") ?? new Date() } });
+    await tx.inventoryItem.update({ where: { id: itemId }, data: { stock: roundQty(item.stock - quantity) } });
+  });
+  revalidatePath(path(orderId));
+  revalidatePath("/admin/supplies");
+}
+
+/** Removes a material from the gown and puts it back in stock. */
+export async function removeMaterial(orderId: string, materialId: string) {
+  await requireUser();
+  await db.$transaction(async (tx) => {
+    const m = await tx.orderMaterial.delete({ where: { id: materialId, orderId } });
+    const item = await tx.inventoryItem.findUniqueOrThrow({ where: { id: m.itemId } });
+    await tx.inventoryItem.update({ where: { id: m.itemId }, data: { stock: roundQty(item.stock + m.quantity) } });
+  });
+  revalidatePath(path(orderId));
+  revalidatePath("/admin/supplies");
 }

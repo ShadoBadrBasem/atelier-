@@ -14,7 +14,7 @@ export async function ordersWithFinance(where: Prisma.OrderWhereInput = {}) {
   const orders = await db.order.findMany({
     where,
     orderBy: [{ eventDate: "asc" }, { createdAt: "desc" }],
-    include: { client: { select: { id: true, name: true, whatsapp: true } }, ...financeInclude },
+    include: { client: { select: { id: true, name: true, whatsapp: true, language: true } }, ...financeInclude },
   });
   return orders.map((o) => ({ ...o, finance: orderFinance(o, now) }));
 }

@@ -43,6 +43,18 @@ export async function updateClient(id: string, fd: FormData) {
   await requireUser();
   await db.client.update({ where: { id }, data: readClient(fd) });
   revalidatePath(`/admin/clients/${id}`);
+  revalidatePath("/admin/clients");
+  redirect(`/admin/clients/${id}?saved=1`);
+}
+
+/** Deletes a client with no orders. Orders keep their history, so clients with orders stay. */
+export async function deleteClient(id: string) {
+  await requireUser();
+  const orders = await db.order.count({ where: { clientId: id } });
+  if (orders > 0) throw new Error("This client has orders. Delete or reassign her orders first.");
+  await db.client.delete({ where: { id } });
+  revalidatePath("/admin/clients");
+  redirect("/admin/clients");
 }
 
 /** Append-only: every save creates the next version, nothing is overwritten. */
