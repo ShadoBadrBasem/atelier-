@@ -8,6 +8,7 @@ import { Empty, PageTitle, Panel } from "@/components/admin/kit";
 import { fmtDate, fmtDateTime, toDateInput } from "@/lib/cairo";
 import { formatEgp } from "@/lib/money";
 import { orderFinance } from "@/lib/domain/orderFinance";
+import { stageColor } from "@/lib/phaseColors";
 import { COST_CATEGORIES, PAYMENT_METHODS, PAYMENT_STATUS_STYLE, STAGES, apptLabel, stageLabel } from "@/lib/constants";
 import { addCost, addPayment, deleteCost, deletePayment, savePricing, setStage, updateOrderInfo } from "../actions";
 
@@ -46,9 +47,10 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       </p>
 
       <Panel title="Progress">
-        <ol className="mb-4 flex gap-1 overflow-x-auto pb-1">
+        <ol className="mb-4 flex gap-1.5 overflow-x-auto p-1">
           {STAGES.map((s, i) => (
-            <li key={s.key} className={`shrink-0 px-2 py-1 text-[11px] uppercase tracking-wider ${i < stageIdx ? "bg-olive/30" : i === stageIdx ? "bg-oxblood text-cream" : "border border-olive/40 text-ink-soft"}`}>
+            <li key={s.key} className={`shrink-0 rounded-full px-3 py-1 text-[11px] uppercase tracking-wider ${i > stageIdx ? "border border-olive/40 text-ink-soft" : ""} ${i === stageIdx ? "ring-2 ring-oxblood ring-offset-2 ring-offset-[#fbf7ef]" : ""}`}
+              style={i <= stageIdx ? { background: stageColor(s.key).bg, color: stageColor(s.key).fg, opacity: i < stageIdx ? 0.7 : 1 } : undefined}>
               {s.label}
             </li>
           ))}

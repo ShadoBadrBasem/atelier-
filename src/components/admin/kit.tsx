@@ -86,6 +86,22 @@ export function Tabs({ items, current }: { items: { href: string; label: string;
   );
 }
 
+/** Small rounded label in a phase colour (see lib/phaseColors). */
+export function PhasePill({ color, children }: { color: { bg: string; fg: string }; children: ReactNode }) {
+  return <span className="at-pill" style={{ background: color.bg, color: color.fg }}>{children}</span>;
+}
+
+/** Colour key, e.g. for appointment types or order stages. */
+export function Legend({ items }: { items: { key: string; label: string; color: { bg: string; fg: string } }[] }) {
+  return (
+    <ul className="at-legend" aria-label="Colour key">
+      {items.map((i) => (
+        <li key={i.key}><span className="at-swatch" style={{ background: i.color.bg }} aria-hidden />{i.label}</li>
+      ))}
+    </ul>
+  );
+}
+
 export function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
 }

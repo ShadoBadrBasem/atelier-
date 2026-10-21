@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { btnCls } from "@/components/ui";
-import { Empty, PageTitle } from "@/components/admin/kit";
+import { Empty, Legend, PageTitle, Panel, PhasePill, Tabs } from "@/components/admin/kit";
 import { addDaysKey, dayKey, fmtTime, startOfDay, todayKey } from "@/lib/cairo";
-import { apptLabel } from "@/lib/constants";
+import { APPOINTMENT_TYPES, apptLabel } from "@/lib/constants";
+import { apptColor } from "@/lib/phaseColors";
 
 type View = "day" | "week" | "month";
 const WEEKDAYS = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"]; // Egyptian week starts Saturday
@@ -54,44 +55,53 @@ export default async function CalendarPage({
     : view === "week" ? `Week of ${label(from, { day: "numeric", month: "short" })}`
     : label(d, { weekday: "long", day: "numeric", month: "long" });
 
-  const dayList = (k: string) => {
-    const list = byDay.get(k) ?? [];
-    return list.length === 0 ? <Empty>Nothing scheduled.</Empty> : (
-      <ul className="flex flex-col gap-2">
-        {list.map((a) => (
-          <li key={a.id}>
-            <Link href={`/admin/calendar/${a.id}`} className={`block border-s-4 bg-[#f6f1e7] p-2 shadow-sm ${a.type.includes("fitting") ? "border-s-copper" : a.type === "delivery" ? "border-s-olive" : "border-s-oxblood"}`}>
-              <div className="text-sm tabular-nums">{fmtTime(a.startsAt)}–{fmtTime(a.endsAt)} · {apptLabel(a.type)}</div>
-              <div className="text-xs text-ink-soft">{a.client?.name ?? "No client"}{a.order ? ` · ${a.order.code}` : ""}{a.status !== "scheduled" ? ` · ${a.status}` : ""}</div>
-            </Link>
-          </li>
-        ))}
-      </ul>
+  const STATUS_LABEL: Record<string, string> = { done: "Done", no_show: "No show" };
+  const event = (a: (typeof appts)[number]) => {
+    const c = apptColor(a.type);
+    return (
+      <Link key={a.id} href={`/admin/calendar/${a.id}`} className={`cal-event is-${a.status}`} style={{ ["--appt" as string]: c.bg }}>
+        <div className="flex items-center justify-between gap-2">
+          <span className="cal-event-time">{fmtTime(a.startsAt)}<span className="at-muted text-sm">–{fmtTime(a.endsAt)}</span></span>
+          <PhasePill color={c}>{apptLabel(a.type)}</PhasePill>
+        </div>
+        <div className="cal-event-title">{a.client?.name ?? "No client"}</div>
+        {(a.order || STATUS_LABEL[a.status]) && (
+          <div className="cal-event-meta">{[a.order?.code, STATUS_LABEL[a.status]].filter(Boolean).join(" · ")}</div>
+        )}
+      </Link>
     );
   };
+  const dayList = (k: string) => {
+    const list = byDay.get(k) ?? [];
+    return list.length === 0 ? <Empty>Nothing scheduled.</Empty> : <div className="flex flex-col gap-2">{list.map(event)}</div>;
+  };
+  const isWeekend = (k: string) => satIndex(k) === 0 || satIndex(k) === 6; // Saturday and Friday
 
   return (
     <main className="flex flex-col gap-5">
-      <PageTitle eyebrow="Calendar" title={title} action={<Link href={`/admin/calendar/new?d=${d}`} className={btnCls}>Schedule</Link>} />
-      <div className="flex flex-wrap items-center gap-2">
-        {(["day", "week", "month"] as View[]).map((v) => (
-          <Link key={v} href={href(v, d)} aria-current={view === v ? "page" : undefined} className={`inline-flex min-h-10 items-center px-4 text-[11px] uppercase tracking-[0.16em] ${view === v ? "bg-oxblood text-cream" : "border border-olive/40 bg-[#f6f1e7]"}`}>{v}</Link>
-        ))}
-        <span className="ms-auto flex gap-2">
-          <Link href={href(view, prev)} className="border border-olive/50 px-3 py-1.5" aria-label="Previous">‹</Link>
-          <Link href={href(view, today)} className="border border-olive/50 px-3 py-1.5 text-xs uppercase">Today</Link>
-          <Link href={href(view, next)} className="border border-olive/50 px-3 py-1.5" aria-label="Next">›</Link>
-        </span>
+      <PageTitle eyebrow="Calendar" title={title} sub={`${appts.length} appointment${appts.length === 1 ? "" : "s"} in view`} action={<Link href={`/admin/calendar/new?d=${d}`} className={btnCls}>Schedule</Link>} />
+
+      <div className="cal-bar">
+        <Tabs current={view} items={(["day", "week", "month"] as View[]).map((v) => ({ key: v, label: v, href: href(v, d) }))} />
+        <nav className="cal-nav" aria-label="Move through the calendar">
+          <Link href={href(view, prev)} aria-label="Previous">‹</Link>
+          <Link href={href(view, today)}>Today</Link>
+          <Link href={href(view, next)} aria-label="Next">›</Link>
+        </nav>
       </div>
 
-      {view === "day" && dayList(d)}
+      <Legend items={APPOINTMENT_TYPES.map((t) => ({ key: t.key, label: t.label, color: apptColor(t.key) }))} />
+
+      {view === "day" && <Panel title={label(d, { weekday: "long", day: "numeric", month: "long" })}>{dayList(d)}</Panel>}
 
       {view === "week" && (
-        <div className="grid gap-3 md:grid-cols-7">
+        <div className="cal-week">
           {days.map((k) => (
-            <section key={k} className={`min-w-0 ${k === today ? "bg-sand/40" : ""} p-1`}>
-              <h2 className="mb-1 text-xs uppercase tracking-wider"><Link href={href("day", k)}>{label(k, { weekday: "short", day: "numeric" })}</Link></h2>
-              {dayList(k)}
+            <section key={k} className={`cal-day ${k === today ? "is-today" : ""}`}>
+              <Link href={href("day", k)} className="cal-day-head">
+                <span>{label(k, { weekday: "short" })}</span><b>{Number(k.slice(8))}</b>
+              </Link>
+              {(byDay.get(k) ?? []).length === 0 ? <span className="at-muted text-xs">Free</span> : (byDay.get(k) ?? []).map(event)}
             </section>
           ))}
         </div>
@@ -99,28 +109,34 @@ export default async function CalendarPage({
 
       {view === "month" && (
         // Tablet/laptop: month grid with the selected day beside it (split view).
-        <div className="flex flex-col gap-4 lg:flex-row">
-          <div className="lg:flex-1">
-            <div className="grid grid-cols-7 text-center text-[11px] uppercase tracking-wider text-ink-soft">
-              {WEEKDAYS.map((w) => <div key={w} className="py-1">{w}</div>)}
-            </div>
-            <div className="grid grid-cols-7 gap-px bg-olive/30">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+          <div className="cal-month lg:flex-1">
+            <div className="cal-head">{WEEKDAYS.map((w) => <div key={w}>{w}</div>)}</div>
+            <div className="cal-grid">
               {days.map((k) => {
-                const n = byDay.get(k)?.length ?? 0;
+                const list = byDay.get(k) ?? [];
                 const inMonth = k.slice(0, 7) === d.slice(0, 7);
+                const cls = ["cal-cell", !inMonth && "is-out", isWeekend(k) && "is-weekend", k === today && "is-today", k === d && "is-selected"].filter(Boolean).join(" ");
                 return (
-                  <Link key={k} href={href("month", k)}
-                    className={`flex aspect-square flex-col items-center justify-start p-1 text-sm md:aspect-auto md:min-h-20 ${k === d ? "bg-oxblood text-cream" : k === today ? "bg-sand" : "bg-cream"} ${inMonth ? "" : "opacity-40"}`}>
-                    <span className="tabular-nums">{Number(k.slice(8))}</span>
-                    {n > 0 && <span className={`mt-1 text-[10px] ${k === d ? "" : "text-copper"}`}>{"●".repeat(Math.min(n, 4))}</span>}
+                  <Link key={k} href={href("month", k)} className={cls} aria-label={`${label(k, { weekday: "long", day: "numeric", month: "long" })}, ${list.length} appointments`}>
+                    <span className="cal-num">{Number(k.slice(8))}</span>
+                    {list.slice(0, 3).map((a) => {
+                      const c = apptColor(a.type);
+                      return <span key={a.id} className="cal-chip" style={{ background: c.bg, color: c.fg }}>{fmtTime(a.startsAt)} {a.client?.name ?? apptLabel(a.type)}</span>;
+                    })}
+                    {list.length > 3 && <span className="cal-more">+{list.length - 3} more</span>}
+                    {list.length > 0 && (
+                      <span className="cal-dots" aria-hidden>{list.slice(0, 5).map((a) => <span key={a.id} style={{ background: apptColor(a.type).bg }} />)}</span>
+                    )}
                   </Link>
                 );
               })}
             </div>
           </div>
-          <aside className="lg:w-80">
-            <h2 className="mb-2 font-display text-lg">{label(d, { weekday: "long", day: "numeric", month: "short" })}</h2>
-            {dayList(d)}
+          <aside className="lg:sticky lg:top-6 lg:w-80">
+            <Panel eyebrow={d === today ? "Today" : "Selected day"} title={label(d, { weekday: "long", day: "numeric", month: "short" })}>
+              {dayList(d)}
+            </Panel>
           </aside>
         </div>
       )}
