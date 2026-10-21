@@ -36,6 +36,7 @@ Development (`npm run dev`) keeps using port 3000 and can run at the same time.
 `scripts\start-tunnel.ps1` without a named tunnel prints an address like
 `https://something-random.trycloudflare.com`. It works for testing but **changes every time
 the tunnel restarts**, and Cloudflare does not guarantee it. Do not print it on cards.
+To find the current one, open `logs\tunnel.log` and search for `trycloudflare.com`.
 
 ### Permanent address (free tunnel, needs a domain)
 You need a free Cloudflare account and a domain whose DNS is on Cloudflare (for example
