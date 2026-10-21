@@ -8,9 +8,13 @@ $port = if ($env:ATELIER_PORT) { $env:ATELIER_PORT } else { "3100" }
 $tunnel = if ($env:ATELIER_TUNNEL) { $env:ATELIER_TUNNEL } else { "atelier" }
 $config = Join-Path $env:USERPROFILE ".cloudflared\config.yml"
 
+# winget installs it here; a new PATH entry only reaches shells opened after the install.
+$cf = (Get-Command cloudflared -ErrorAction SilentlyContinue).Source
+if (-not $cf) { $cf = "${env:ProgramFiles(x86)}\cloudflared\cloudflared.exe" }
+
 if (Test-Path $config) {
-  cloudflared tunnel run $tunnel
+  & $cf tunnel run $tunnel
 } else {
   Write-Host "No named tunnel set up yet: opening a temporary address (look for trycloudflare.com below)."
-  cloudflared tunnel --url "http://localhost:$port"
+  & $cf tunnel --url "http://localhost:$port"
 }
