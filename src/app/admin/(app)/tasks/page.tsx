@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import { Card, Empty, Field, PageHeader, btnCls, inputCls } from "@/components/ui";
+import { Field, btnCls, inputCls } from "@/components/ui";
+import { Empty, PageTitle, Panel } from "@/components/admin/kit";
 import { TaskList } from "@/components/TaskList";
 import { addDaysKey, startOfDay, todayKey } from "@/lib/cairo";
 import { createTask } from "./actions";
@@ -19,9 +20,9 @@ export default async function TasksPage() {
   const someday = open.filter((t) => !t.dueDate);
 
   return (
-    <main className="flex flex-col gap-4">
-      <PageHeader title="Tasks" sub={`${todayList.length} for today`} />
-      <Card title="Add a task">
+    <main className="flex flex-col gap-5">
+      <PageTitle eyebrow="The Atelier" title="Tasks" sub={`${todayList.length} for today`} />
+      <Panel title="Add a task">
         <form action={createTask} className="grid grid-cols-2 gap-2 md:grid-cols-6 md:items-end">
           <div className="col-span-2"><Field label="Task"><input name="title" required className={inputCls} /></Field></div>
           <Field label="Due"><input name="dueDate" type="date" defaultValue={todayKey()} className={inputCls} /></Field>
@@ -36,11 +37,11 @@ export default async function TasksPage() {
           </Field>
           <div className="col-span-2 md:col-span-6"><button className={btnCls}>Add</button></div>
         </form>
-      </Card>
-      <Card title="Today">{todayList.length ? <TaskList tasks={todayList} showDelete /> : <Empty>Nothing due today.</Empty>}</Card>
-      <Card title="Upcoming">{upcoming.length ? <TaskList tasks={upcoming} showDelete /> : <Empty>Nothing scheduled.</Empty>}</Card>
-      {someday.length > 0 && <Card title="No date"><TaskList tasks={someday} showDelete /></Card>}
-      {done.length > 0 && <Card title="Recently done"><TaskList tasks={done} /></Card>}
+      </Panel>
+      <Panel title="Today">{todayList.length ? <TaskList tasks={todayList} showDelete /> : <Empty>Nothing due today.</Empty>}</Panel>
+      <Panel title="Upcoming">{upcoming.length ? <TaskList tasks={upcoming} showDelete /> : <Empty>Nothing scheduled.</Empty>}</Panel>
+      {someday.length > 0 && <Panel title="No date"><TaskList tasks={someday} showDelete /></Panel>}
+      {done.length > 0 && <Panel title="Recently done"><TaskList tasks={done} /></Panel>}
     </main>
   );
 }

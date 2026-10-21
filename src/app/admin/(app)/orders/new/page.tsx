@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { Field, PageHeader, btnCls, inputCls } from "@/components/ui";
+import { Field, btnCls, inputCls } from "@/components/ui";
+import { PageTitle, Panel } from "@/components/admin/kit";
 import { createOrder } from "../actions";
 
 export default async function NewOrder({
@@ -12,8 +13,9 @@ export default async function NewOrder({
   const clients = await db.client.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
 
   return (
-    <main>
-      <PageHeader title="New order" />
+    <main className="flex flex-col gap-5">
+      <PageTitle eyebrow="Orders" title="New order" />
+      <Panel>
       {clients.length === 0 ? (
         <p>
           Add a client first. <Link className="underline" href="/admin/clients/new">New client</Link>
@@ -38,7 +40,7 @@ export default async function NewOrder({
           <Field label="Event date">
             <input name="eventDate" type="date" className={inputCls} />
           </Field>
-          <Field label="List price (EGP)" hint="You can add discounts, deposit and due dates on the order.">
+          <Field label="List price (EGP)" hint="The client's standing discount is applied automatically. Deposit and due dates are set on the order.">
             <input name="listPrice" inputMode="decimal" className={inputCls} />
           </Field>
           <div className="md:col-span-2">
@@ -46,6 +48,7 @@ export default async function NewOrder({
           </div>
         </form>
       )}
+      </Panel>
     </main>
   );
 }

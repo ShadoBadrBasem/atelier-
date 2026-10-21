@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Badge, Empty, PageHeader, btnCls } from "@/components/ui";
+import { Badge, btnCls } from "@/components/ui";
+import { Empty, PageTitle, Tabs } from "@/components/admin/kit";
 import { fmtDate } from "@/lib/cairo";
 import { formatEgp } from "@/lib/money";
 import { PAYMENT_STATUS_STYLE, STAGES, stageLabel } from "@/lib/constants";
@@ -20,7 +21,7 @@ type Row = Awaited<ReturnType<typeof ordersWithFinance>>[number];
 function OrderCard({ o }: { o: Row }) {
   const ps = PAYMENT_STATUS_STYLE[o.finance.status];
   return (
-    <Link href={`/admin/orders/${o.id}`} className={`block bg-cream/70 p-3 shadow-sm ${deadlineCls(o.eventDate, o.stage)}`}>
+    <Link href={`/admin/orders/${o.id}`} className={`block border border-olive/20 bg-[#f6f1e7] p-3 shadow-sm transition-shadow hover:shadow-md ${deadlineCls(o.eventDate, o.stage)}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate font-display text-base">{o.title}</div>
@@ -44,16 +45,11 @@ export default async function OrdersPage({
   const { view = "kanban" } = await searchParams;
   const orders = await ordersWithFinance();
 
-  const tab = (v: string, label: string) => (
-    <Link href={`?view=${v}`} className={`px-3 py-1.5 text-xs uppercase tracking-wider ${view === v ? "bg-oxblood text-cream" : "border border-olive/50"}`}>
-      {label}
-    </Link>
-  );
 
   return (
-    <main>
-      <PageHeader title="Orders" action={<Link href="/admin/orders/new" className={btnCls}>New order</Link>} />
-      <div className="mb-4 flex gap-2">{tab("kanban", "Board")}{tab("list", "List")}</div>
+    <main className="flex flex-col gap-5">
+      <PageTitle eyebrow="The Atelier" title="Orders" sub={`${orders.filter((o) => o.stage !== "delivered").length} in progress`} action={<Link href="/admin/orders/new" className={btnCls}>New order</Link>} />
+      <div><Tabs current={view} items={[{ key: "kanban", label: "Board", href: "?view=kanban" }, { key: "list", label: "List", href: "?view=list" }]} /></div>
 
       {orders.length === 0 ? (
         <Empty>No orders yet.</Empty>
@@ -71,7 +67,7 @@ export default async function OrdersPage({
           {STAGES.map((s) => {
             const col = orders.filter((o) => o.stage === s.key);
             return (
-              <section key={s.key} className="w-64 shrink-0 snap-start bg-sand/40 p-2">
+              <section key={s.key} className="w-64 shrink-0 snap-start border-t-2 border-oxblood/70 bg-sand/30 p-2">
                 <h2 className="mb-2 flex justify-between px-1 text-xs uppercase tracking-[0.2em]">
                   {s.label}<span>{col.length}</span>
                 </h2>

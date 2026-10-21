@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { Empty, PageHeader, btnCls } from "@/components/ui";
+import { btnCls } from "@/components/ui";
+import { Empty, PageTitle } from "@/components/admin/kit";
 import { addDaysKey, dayKey, fmtTime, startOfDay, todayKey } from "@/lib/cairo";
 import { apptLabel } from "@/lib/constants";
 
@@ -59,7 +60,7 @@ export default async function CalendarPage({
       <ul className="flex flex-col gap-2">
         {list.map((a) => (
           <li key={a.id}>
-            <Link href={`/admin/calendar/${a.id}`} className={`block border-s-4 bg-cream/70 p-2 ${a.type.includes("fitting") ? "border-s-copper" : a.type === "delivery" ? "border-s-olive" : "border-s-oxblood"}`}>
+            <Link href={`/admin/calendar/${a.id}`} className={`block border-s-4 bg-[#f6f1e7] p-2 shadow-sm ${a.type.includes("fitting") ? "border-s-copper" : a.type === "delivery" ? "border-s-olive" : "border-s-oxblood"}`}>
               <div className="text-sm tabular-nums">{fmtTime(a.startsAt)}–{fmtTime(a.endsAt)} · {apptLabel(a.type)}</div>
               <div className="text-xs text-ink-soft">{a.client?.name ?? "No client"}{a.order ? ` · ${a.order.code}` : ""}{a.status !== "scheduled" ? ` · ${a.status}` : ""}</div>
             </Link>
@@ -70,11 +71,11 @@ export default async function CalendarPage({
   };
 
   return (
-    <main>
-      <PageHeader title={title} action={<Link href={`/admin/calendar/new?d=${d}`} className={btnCls}>Schedule</Link>} />
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+    <main className="flex flex-col gap-5">
+      <PageTitle eyebrow="Calendar" title={title} action={<Link href={`/admin/calendar/new?d=${d}`} className={btnCls}>Schedule</Link>} />
+      <div className="flex flex-wrap items-center gap-2">
         {(["day", "week", "month"] as View[]).map((v) => (
-          <Link key={v} href={href(v, d)} className={`px-3 py-1.5 text-xs uppercase tracking-wider ${view === v ? "bg-oxblood text-cream" : "border border-olive/50"}`}>{v}</Link>
+          <Link key={v} href={href(v, d)} aria-current={view === v ? "page" : undefined} className={`inline-flex min-h-10 items-center px-4 text-[11px] uppercase tracking-[0.16em] ${view === v ? "bg-oxblood text-cream" : "border border-olive/40 bg-[#f6f1e7]"}`}>{v}</Link>
         ))}
         <span className="ms-auto flex gap-2">
           <Link href={href(view, prev)} className="border border-olive/50 px-3 py-1.5" aria-label="Previous">‹</Link>

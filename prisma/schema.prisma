@@ -29,6 +29,13 @@ model Client {
   eventType String? // bridal | evening
   eventDate DateTime?
   notes     String?
+
+  // Standing discount: copied onto each new order, same encoding as Order.
+  discountKind   String  @default("none") // none | family_friends | other
+  discountMode   String  @default("percent") // percent | amount
+  discountValue  Int     @default(0) // percent => basis points; amount => piasters per order
+  discountReason String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

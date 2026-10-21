@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { Gallery } from "@/components/Gallery";
 import { PricingForm } from "@/components/PricingForm";
-import { Badge, Card, Empty, Field, PageHeader, btnCls, btnDangerCls, btnGhostCls, inputCls } from "@/components/ui";
+import { Badge, Field, btnCls, btnDangerCls, btnGhostCls, inputCls } from "@/components/ui";
+import { Empty, PageTitle, Panel } from "@/components/admin/kit";
 import { fmtDate, fmtDateTime, toDateInput } from "@/lib/cairo";
 import { formatEgp } from "@/lib/money";
 import { orderFinance } from "@/lib/domain/orderFinance";
@@ -33,8 +34,9 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const egpNum = (p: number) => p / 100;
 
   return (
-    <main className="flex flex-col gap-4">
-      <PageHeader
+    <main className="flex flex-col gap-5">
+      <PageTitle
+        eyebrow={`Order ${o.code}`}
         title={o.title}
         sub={`${o.code} · ${o.kind} · ${o.eventDate ? `event ${fmtDate(o.eventDate)}` : "no event date"}`}
         action={<Badge cls={ps.cls}>{ps.label}</Badge>}
@@ -43,7 +45,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         Client: <Link className="underline" href={`/admin/clients/${o.client.id}`}>{o.client.name}</Link>
       </p>
 
-      <Card title="Progress">
+      <Panel title="Progress">
         <ol className="mb-4 flex gap-1 overflow-x-auto pb-1">
           {STAGES.map((s, i) => (
             <li key={s.key} className={`shrink-0 px-2 py-1 text-[11px] uppercase tracking-wider ${i < stageIdx ? "bg-olive/30" : i === stageIdx ? "bg-oxblood text-cream" : "border border-olive/40 text-ink-soft"}`}>
@@ -65,9 +67,9 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             <li key={l.id}>{fmtDate(l.enteredAt)} · {stageLabel(l.stage)}{l.note ? ` · ${l.note}` : ""}</li>
           ))}
         </ul>
-      </Card>
+      </Panel>
 
-      <Card title="Pricing & payment">
+      <Panel title="Pricing & payment">
         <dl className="mb-4 grid grid-cols-2 gap-x-4 gap-y-1 text-sm md:grid-cols-4">
           <dt className="text-ink-soft">List price</dt><dd className="tabular-nums">{formatEgp(o.listPrice)}</dd>
           <dt className="text-ink-soft">Discount</dt>
@@ -91,9 +93,9 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           <dd className={`tabular-nums ${f.profit < 0 ? "text-burnt" : ""}`}>{formatEgp(f.profit)} ({(f.marginBps / 100).toFixed(1)}%)</dd>
           {f.discount > 0 && (<><dt className="text-ink-soft">Discount cost you</dt><dd className="tabular-nums text-burnt">{formatEgp(f.discount)}</dd></>)}
         </dl>
-        <details>
-          <summary className="cursor-pointer text-sm underline">Edit pricing, deposit and due dates</summary>
-          <div className="mt-3">
+        <details className="at-disclosure">
+          <summary>Edit pricing, deposit and due dates</summary>
+          <div>
             <PricingForm
               action={savePricing.bind(null, o.id)}
               initial={{
@@ -109,9 +111,9 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             />
           </div>
         </details>
-      </Card>
+      </Panel>
 
-      <Card title="Payments">
+      <Panel title="Payments">
         <form action={addPayment.bind(null, o.id)} className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-6 md:items-end">
           <Field label="Amount (EGP)"><input name="amount" required inputMode="decimal" className={inputCls} /></Field>
           <Field label="Date"><input name="paidAt" type="date" defaultValue={toDateInput(new Date())} className={inputCls} /></Field>
@@ -135,9 +137,9 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             ))}
           </ul>
         )}
-      </Card>
+      </Panel>
 
-      <Card title="Dress cost">
+      <Panel title="Dress cost">
         <dl className="mb-3 grid grid-cols-2 gap-1 text-sm md:grid-cols-4">
           <dt className="text-ink-soft">Materials (from inventory)</dt><dd className="tabular-nums">{formatEgp(f.materials)}</dd>
           <dt className="text-ink-soft">Labor & outsourced</dt><dd className="tabular-nums">{formatEgp(f.labor)}</dd>
@@ -170,21 +172,21 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           ))}
         </ul>
         <p className="mt-2 text-xs text-ink-soft">Materials are assigned from Supplies (milestone 5), which deducts stock and adds the cost here.</p>
-      </Card>
+      </Panel>
 
-      <Card title="Photos & design files">
+      <Panel title="Photos & design files">
         <Gallery orderId={o.id} defaultCategory="sketch" />
-      </Card>
+      </Panel>
 
-      <Card title="Appointments" action={<Link className="text-sm underline" href={`/admin/calendar/new?orderId=${o.id}`}>Schedule</Link>}>
+      <Panel title="Appointments" action={<Link className="text-sm underline" href={`/admin/calendar/new?orderId=${o.id}`}>Schedule</Link>}>
         {o.appointments.length === 0 ? <Empty>None scheduled.</Empty> : (
           <ul className="text-sm">
             {o.appointments.map((a) => <li key={a.id}>{fmtDateTime(a.startsAt)} · {apptLabel(a.type)} · {a.status}</li>)}
           </ul>
         )}
-      </Card>
+      </Panel>
 
-      <Card title="Details">
+      <Panel title="Details">
         <form action={updateOrderInfo.bind(null, o.id)} className="grid gap-3 md:grid-cols-3">
           <Field label="Title"><input name="title" required defaultValue={o.title} className={inputCls} /></Field>
           <Field label="Type">
@@ -194,7 +196,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           <div className="md:col-span-3"><Field label="Notes, fabrics, details"><textarea name="notes" rows={4} defaultValue={o.notes ?? ""} className={inputCls} /></Field></div>
           <div><button className={btnGhostCls}>Save details</button></div>
         </form>
-      </Card>
+      </Panel>
     </main>
   );
 }

@@ -6,7 +6,8 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { money, optDate, optStr, str } from "@/lib/form";
-import { finalPrice } from "@/lib/domain/pricing";
+import { finalPrice, type DiscountKind, type DiscountMode } from "@/lib/domain/pricing";
+import { readDiscount } from "@/lib/discountForm";
 import { defaultBalanceDue } from "@/lib/domain/orderFinance";
 import { stageKeys, PAYMENT_METHODS, COST_CATEGORIES } from "@/lib/constants";
 
@@ -17,6 +18,20 @@ async function nextCode(): Promise<string> {
   const last = await db.order.findFirst({ orderBy: { code: "desc" }, select: { code: true } });
   const n = last ? parseInt(last.code.replace(/\D/g, ""), 10) + 1 : 1;
   return `SB-${String(n).padStart(4, "0")}`;
+}
+
+/** The client's standing discount, copied onto a new order. */
+async function clientDiscount(clientId: string) {
+  const c = await db.client.findUniqueOrThrow({
+    where: { id: clientId },
+    select: { discountKind: true, discountMode: true, discountValue: true, discountReason: true },
+  });
+  return {
+    discountKind: c.discountKind as DiscountKind,
+    discountMode: c.discountMode as DiscountMode,
+    discountValue: c.discountValue,
+    discountReason: c.discountReason,
+  };
 }
 
 export async function createOrder(fd: FormData) {
@@ -30,6 +45,7 @@ export async function createOrder(fd: FormData) {
     .parse({ clientId: str(fd, "clientId"), title: str(fd, "title"), kind: str(fd, "kind") });
   const listPrice = money(fd, "listPrice");
   const eventDate = optDate(fd, "eventDate");
+  const discount = await clientDiscount(data.clientId);
 
   const order = await db.order.create({
     data: {
@@ -37,7 +53,8 @@ export async function createOrder(fd: FormData) {
       code: await nextCode(),
       eventDate,
       listPrice,
-      finalPrice: listPrice,
+      ...discount,
+      finalPrice: finalPrice({ listPrice, ...discount }),
       balanceDueDate: defaultBalanceDue(eventDate),
       stageLogs: { create: { stage: "inquiry" } },
     },
@@ -74,33 +91,16 @@ export async function setStage(id: string, fd: FormData) {
 
 export async function savePricing(id: string, fd: FormData) {
   await requireUser();
-  const discountKind = z.enum(["none", "family_friends", "other"]).parse(str(fd, "discountKind"));
-  const discountMode = z.enum(["percent", "amount"]).parse(str(fd, "discountMode"));
-  const reason = optStr(fd, "discountReason");
-  if (discountKind === "other" && !reason) throw new Error("Give a reason for the discount");
-
+  const discount = readDiscount(fd);
   const listPrice = money(fd, "listPrice");
-  let discountValue = 0;
-  if (discountKind !== "none") {
-    if (discountMode === "percent") {
-      const pct = Number(str(fd, "discountValue") || "0");
-      if (!Number.isFinite(pct) || pct < 0 || pct > 100) throw new Error("Percent must be 0-100");
-      discountValue = Math.round(pct * 100); // basis points
-    } else {
-      discountValue = money(fd, "discountValue");
-    }
-  }
 
   const order = await db.order.findUniqueOrThrow({ where: { id }, select: { eventDate: true } });
   await db.order.update({
     where: { id },
     data: {
       listPrice,
-      discountKind,
-      discountMode,
-      discountValue,
-      discountReason: discountKind === "none" ? null : reason,
-      finalPrice: finalPrice({ listPrice, discountKind, discountMode, discountValue }),
+      ...discount,
+      finalPrice: finalPrice({ listPrice, ...discount }),
       depositAmount: money(fd, "depositAmount"),
       depositDueDate: optDate(fd, "depositDueDate"),
       balanceDueDate: optDate(fd, "balanceDueDate") ?? defaultBalanceDue(order.eventDate),

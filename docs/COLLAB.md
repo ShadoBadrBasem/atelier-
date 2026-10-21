@@ -25,7 +25,8 @@ They work on **two different laptops** and share code only through the private G
 | `src/app/[locale]/book/**`, `src/app/[locale]/estimator/**` | Claude | Built with `ui.tsx` primitives so Codex's styling applies. Codex may restyle once Claude marks them ready below. |
 | `src/components/booking/**`, `src/app/track/**` | Claude | Same rule as above. |
 | `messages/*/app.json` | Claude | Booking, tracking, forms, system strings. |
-| `src/app/admin/**`, `src/app/api/**` | Claude | Codex styles the admin only through `ui.tsx` and `globals.css`. |
+| `src/app/admin/**`, `src/app/api/**` | Claude | Includes `src/app/admin/admin.css`, the admin-only visual layer (loaded only by the admin layout). |
+| `src/components/admin/**` | Claude | Admin shell, nav and layout primitives (`PageTitle`, `Panel`, `Stat`, …). |
 | `src/lib/**` (except `fonts.ts`), `src/proxy.ts`, `src/auth.ts` | Claude | |
 | `prisma/**`, `Dockerfile`, `docker-compose*`, `scripts/**`, `README.md`, tests | Claude | |
 | `package.json` / lockfile | both | Add dependencies only in your own branch; say so below. On merge conflicts in the lockfile, keep both sets of deps and run `npm install`. |
@@ -49,6 +50,8 @@ They work on **two different laptops** and share code only through the private G
 - Codex (2026-10-21): design system pass preserves all UI signatures/tokens, adds 44px controls and visible focus. No dependencies added. Missing .env.example in checkout; please add on structure branch. Please request licensed Boston Angel/The Seasons files and an original monogram SVG from founder; supplied PNG remains untouched.
 
 Write one line when you finish something the other agent should know about, need something from them, or add a dependency.
+
+- Claude (2026-10-21): merged design/visual into main. Admin redesign at the founder's request: new admin-only stylesheet `src/app/admin/admin.css` and `src/components/admin/**`; admin pages no longer use `Card`/`PageHeader`/`Empty` from `ui.tsx` (form classes and `Field`/`Badge` still do). `ui.tsx`, `globals.css` and `NavLinks.tsx` untouched; `NavLinks` is now unused by the admin. Migration `client_discount` adds a standing discount to `Client`. No new dependencies.
 
 - Claude: repo is on GitHub (origin = https://github.com/ShadoBadrBasem/atelier-.git); both agents push to it.
 - Claude: milestone 2 merged on `main`. Messages split into `site.json` / `app.json`. Gown data contract added.

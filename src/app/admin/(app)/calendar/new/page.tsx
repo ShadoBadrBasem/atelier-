@@ -1,5 +1,5 @@
 import { AppointmentForm } from "@/components/AppointmentForm";
-import { PageHeader } from "@/components/ui";
+import { PageTitle, Panel } from "@/components/admin/kit";
 import { createAppointment } from "../actions";
 
 export default async function NewAppointment({
@@ -9,12 +9,14 @@ export default async function NewAppointment({
 }) {
   const sp = await searchParams;
   return (
-    <main>
-      <PageHeader title="Schedule appointment" />
+    <main className="flex flex-col gap-5">
+      <PageTitle eyebrow="Calendar" title="Schedule appointment" />
+      <Panel>
       <AppointmentForm
         action={createAppointment}
         defaults={{ orderId: sp.orderId, clientId: sp.clientId, startsAt: sp.d && /^\d{4}-\d{2}-\d{2}$/.test(sp.d) ? `${sp.d}T11:00` : undefined }}
       />
+      </Panel>
     </main>
   );
 }

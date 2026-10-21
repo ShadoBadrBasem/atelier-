@@ -5,8 +5,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { MEASUREMENT_FIELDS } from "@/lib/constants";
-import { normalizePhone, optDate, optStr, str } from "@/lib/form";
+import { MEASUREMENT_FIELDS, PAYMENT_METHODS } from "@/lib/constants";
+import { money, normalizePhone, optDate, optStr, str } from "@/lib/form";
+import { readDiscount } from "@/lib/discountForm";
+import { finalPrice } from "@/lib/domain/pricing";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
@@ -70,4 +72,60 @@ export async function addMeasurement(clientId: string, fd: FormData) {
     },
   });
   revalidatePath(`/admin/clients/${clientId}`);
+}
+
+/** Saves the client's standing discount. New orders copy it; optionally re-price her open orders too. */
+export async function saveClientDiscount(clientId: string, fd: FormData) {
+  await requireUser();
+  const discount = readDiscount(fd);
+  const applyToOpen = fd.get("applyToOpen") === "on";
+
+  await db.$transaction(async (tx) => {
+    await tx.client.update({ where: { id: clientId }, data: discount });
+    if (!applyToOpen) return;
+    const open = await tx.order.findMany({
+      where: { clientId, stage: { not: "delivered" } },
+      select: { id: true, listPrice: true },
+    });
+    for (const o of open) {
+      await tx.order.update({
+        where: { id: o.id },
+        data: { ...discount, finalPrice: finalPrice({ listPrice: o.listPrice, ...discount }) },
+      });
+    }
+  });
+  revalidatePath(`/admin/clients/${clientId}`);
+}
+
+/** Records a deposit payment against one of the client's orders. */
+export async function recordDeposit(clientId: string, fd: FormData) {
+  await requireUser();
+  const orderId = z.string().min(1, "Choose an order").parse(str(fd, "orderId"));
+  const amount = money(fd, "amount");
+  if (amount <= 0) throw new Error("Amount must be above zero");
+  // Guard: the order must belong to this client.
+  await db.order.findFirstOrThrow({ where: { id: orderId, clientId }, select: { id: true } });
+  await db.payment.create({
+    data: {
+      orderId,
+      amount,
+      isDeposit: true,
+      paidAt: optDate(fd, "paidAt") ?? new Date(),
+      method: z.enum(PAYMENT_METHODS.map((m) => m.key) as [string, ...string[]]).parse(str(fd, "method")),
+      note: optStr(fd, "note"),
+    },
+  });
+  revalidatePath(`/admin/clients/${clientId}`);
+  revalidatePath(`/admin/orders/${orderId}`);
+}
+
+/** Sets the deposit required on one order from the client page. */
+export async function setDepositRequired(clientId: string, orderId: string, fd: FormData) {
+  await requireUser();
+  await db.order.update({
+    where: { id: orderId, clientId },
+    data: { depositAmount: money(fd, "depositAmount"), depositDueDate: optDate(fd, "depositDueDate") },
+  });
+  revalidatePath(`/admin/clients/${clientId}`);
+  revalidatePath(`/admin/orders/${orderId}`);
 }

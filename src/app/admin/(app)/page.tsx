@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { Badge, Card, Empty, PageHeader } from "@/components/ui";
+import { Badge } from "@/components/ui";
+import { Empty, PageTitle, Panel, Stat, Stats } from "@/components/admin/kit";
 import { TaskList } from "@/components/TaskList";
 import { addDaysKey, fmtDate, fmtTime, fmtWeekday, startOfDay, todayKey } from "@/lib/cairo";
 import { formatEgp } from "@/lib/money";
@@ -40,17 +41,25 @@ export default async function Dashboard() {
   const costs = (monthCosts._sum.amount ?? 0) + (monthExpenses._sum.amount ?? 0);
 
   return (
-    <main className="flex flex-col gap-4">
-      <PageHeader title="Today" sub={fmtWeekday(new Date())} />
+    <main className="flex flex-col gap-5">
+      <PageTitle eyebrow={fmtWeekday(new Date())} title="Today" sub={`${todayAppts.length} appointment${todayAppts.length === 1 ? "" : "s"} · ${tasks.length} task${tasks.length === 1 ? "" : "s"} due`} />
 
       {pending > 0 && (
-        <Link href="/admin/calendar" className="block bg-copper/30 p-3 text-sm">
-          {pending} booking request{pending > 1 ? "s" : ""} waiting for you
+        <Link href="/admin/calendar" className="at-callout">
+          <span>{pending} booking request{pending > 1 ? "s" : ""} waiting for you</span>
+          <span aria-hidden>→</span>
         </Link>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card title="Agenda">
+      <Stats>
+        <Stat label="Open orders" value={orders.length} hint={`${nearDeadline.length} due within 30 days`} tone="ox" />
+        <Stat label="Received this month" value={formatEgp(revenue)} tone="good" />
+        <Stat label="Costs this month" value={formatEgp(costs)} tone="copper" />
+        <Stat label="Net this month" value={formatEgp(revenue - costs)} tone={revenue - costs < 0 ? "warn" : "good"} />
+      </Stats>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <Panel title="Agenda">
           {todayAppts.length === 0 ? <Empty>No appointments today.</Empty> : (
             <ul className="flex flex-col gap-2">
               {todayAppts.map((a) => (
@@ -61,13 +70,13 @@ export default async function Dashboard() {
               ))}
             </ul>
           )}
-        </Card>
+        </Panel>
 
-        <Card title="Tasks" action={<Link href="/admin/tasks" className="text-sm underline">All</Link>}>
+        <Panel title="Tasks" action={<Link href="/admin/tasks" className="text-sm underline">All</Link>}>
           {tasks.length === 0 ? <Empty>All done.</Empty> : <TaskList tasks={tasks} />}
-        </Card>
+        </Panel>
 
-        <Card title="Next 7 days">
+        <Panel title="Next 7 days">
           {upcoming.length === 0 ? <Empty>No upcoming fittings.</Empty> : (
             <ul className="flex flex-col gap-1 text-sm">
               {upcoming.map((a) => (
@@ -75,9 +84,9 @@ export default async function Dashboard() {
               ))}
             </ul>
           )}
-        </Card>
+        </Panel>
 
-        <Card title="Payments to watch">
+        <Panel title="Payments to watch">
           {paymentAlerts.length === 0 ? <Empty>Nothing due this week.</Empty> : (
             <ul className="flex flex-col gap-2 text-sm">
               {paymentAlerts.map((o) => (
@@ -91,9 +100,9 @@ export default async function Dashboard() {
               ))}
             </ul>
           )}
-        </Card>
+        </Panel>
 
-        <Card title="Gowns near deadline">
+        <Panel title="Gowns near deadline">
           {nearDeadline.length === 0 ? <Empty>No gowns due within 30 days.</Empty> : (
             <ul className="flex flex-col gap-1 text-sm">
               {nearDeadline.map((o) => (
@@ -104,22 +113,15 @@ export default async function Dashboard() {
               ))}
             </ul>
           )}
-        </Card>
+        </Panel>
 
-        <Card title="Low stock">
+        <Panel title="Low stock">
           {lowStock.length === 0 ? <Empty>Stock is fine.</Empty> : (
             <ul className="text-sm">{lowStock.map((i) => <li key={i.id}>{i.name}: {i.stock} {i.unit} (reorder at {i.reorderLevel})</li>)}</ul>
           )}
-        </Card>
+        </Panel>
       </div>
 
-      <Card title="This month">
-        <dl className="grid grid-cols-3 gap-2 text-center">
-          <div><dt className="text-xs uppercase tracking-wider text-ink-soft">Received</dt><dd className="font-display text-xl tabular-nums">{formatEgp(revenue)}</dd></div>
-          <div><dt className="text-xs uppercase tracking-wider text-ink-soft">Costs</dt><dd className="font-display text-xl tabular-nums">{formatEgp(costs)}</dd></div>
-          <div><dt className="text-xs uppercase tracking-wider text-ink-soft">Net</dt><dd className={`font-display text-xl tabular-nums ${revenue - costs < 0 ? "text-burnt" : ""}`}>{formatEgp(revenue - costs)}</dd></div>
-        </dl>
-      </Card>
     </main>
   );
 }
