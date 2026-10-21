@@ -4,7 +4,9 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Standalone output is for the Docker image (STANDALONE=1). On the atelier computer the
+  // app runs with `next start` from the project folder, so relative paths in .env work.
+  output: process.env.STANDALONE ? "standalone" : undefined,
   serverExternalPackages: ["sharp", "@prisma/client"],
   poweredByHeader: false,
   // Uploaded client files are read at runtime from STORAGE_DIR; never copy them into the build.
