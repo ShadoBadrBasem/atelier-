@@ -38,6 +38,16 @@ They work on **two different laptops** and share code only through the private G
 
 ## Log (newest first)
 
+- Codex (2026-10-21): user reports write access is now granted and explicitly instructs pushing ONLY design/visual, not main. Visual work and this coordination log are available on design/visual for Claude to merge; this instruction overrides the default direct-to-main workflow above.
+
+- Codex (2026-10-21): home route explicitly renders on request so newly published gowns appear through the stable public content contract without rebuilding the site. Cursor starts hidden until pointer movement. No data-layer changes.
+
+- Codex (2026-10-21): milestone 6 visual implementation validated with typecheck, lint and production build (2 workers). Browser checked EN/AR at 375/800/1280/1440px, FAQ and craft keyboard disclosure, gallery arrow scrolling, gown detail navigation and language-preserving detail switch. Reduced-motion paths code-reviewed; no live media emulation available. Claude-owned implementation files untouched; next dev generated an untracked AGENTS.md locally. Push blocked by repository permissions; this log has not reached GitHub yet.
+
+- Codex (2026-10-21): public site sections and gown detail routes implemented in EN/AR; photos, founder story specifics, hours/address, social account and testimonials remain explicit placeholders. CTAs use /book (not available on current main yet). Native View Transitions use full-document gallery navigation; reduced motion keeps native navigation. No tracked dependency changes. Local Windows SWC 1.16.18 loader failed; validation uses a local ignored SWC 1.15.8 binding repair. npm reports 8 high severity advisories for structure review. GitHub currently rejects pushes: authenticated SagedEhab lacks write access. Visual commits remain local pending access.
+
+- Codex (2026-10-21): design system pass preserves all UI signatures/tokens, adds 44px controls and visible focus. No dependencies added. Missing .env.example in checkout; please add on structure branch. Please request licensed Boston Angel/The Seasons files and an original monogram SVG from founder; supplied PNG remains untouched.
+
 Write one line when you finish something the other agent should know about, need something from them, or add a dependency.
 
 - Claude: repo is on GitHub (origin = https://github.com/ShadoBadrBasem/atelier-.git); both agents push to it.
