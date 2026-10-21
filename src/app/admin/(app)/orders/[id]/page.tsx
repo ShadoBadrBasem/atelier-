@@ -10,6 +10,7 @@ import { formatEgp } from "@/lib/money";
 import { orderFinance } from "@/lib/domain/orderFinance";
 import { stageColor } from "@/lib/phaseColors";
 import { WhatsAppSend } from "@/components/admin/WhatsAppSend";
+import { InvoiceShare } from "@/components/admin/InvoiceShare";
 import { composeOrder } from "@/lib/whatsapp/compose";
 import { loadOverrides } from "@/lib/whatsapp/overrides";
 import { templateLabel } from "@/lib/whatsapp/templates";
@@ -165,7 +166,13 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         action={<Link href="/admin/settings/messages" className="text-sm underline underline-offset-4">Edit wording</Link>}
       >
         {o.client.whatsapp ? (
-          <WhatsAppSend to={o.client.whatsapp} clientId={o.client.id} options={waOptions} rtl={o.client.language === "ar"} />
+          <>
+            <WhatsAppSend to={o.client.whatsapp} clientId={o.client.id} options={waOptions} rtl={o.client.language === "ar"} />
+            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-olive/20 pt-4">
+              <span className="at-muted text-sm">Or send the invoice as a picture:</span>
+              <InvoiceShare orderId={o.id} code={o.code} compact />
+            </div>
+          </>
         ) : (
           <p className="at-muted text-sm">
             Add {o.client.name}&apos;s WhatsApp number to send messages. <Link href={`/admin/clients/${o.client.id}/edit`} className="underline">Edit client</Link>

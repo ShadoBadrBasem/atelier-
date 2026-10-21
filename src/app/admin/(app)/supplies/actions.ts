@@ -106,7 +106,9 @@ export async function deletePurchase(itemId: string, purchaseId: string) {
 function readSupplier(fd: FormData) {
   return {
     name: z.string().min(1, "Name is required").max(120).parse(str(fd, "name")),
+    contactName: optStr(fd, "contactName"),
     phone: optStr(fd, "phone"),
+    address: optStr(fd, "address"),
     notes: optStr(fd, "notes"),
   };
 }

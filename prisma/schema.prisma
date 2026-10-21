@@ -46,6 +46,18 @@ model Client {
   tasks           Task[]
   messages        MessageLog[]
   bookingRequests BookingRequest[]
+  boardNotes      BoardNote[]
+}
+
+// Free-standing notes on a client's mood board, placed among her images.
+model BoardNote {
+  id        String   @id @default(cuid())
+  clientId  String
+  text      String
+  tone      String   @default("sand") // sand | copper | olive | rose
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
 // Append-only: a new row per measuring session, never overwritten.
@@ -210,10 +222,12 @@ model Task {
 }
 
 model Supplier {
-  id    String @id @default(cuid())
-  name  String
-  phone String?
-  notes String?
+  id          String  @id @default(cuid())
+  name        String
+  contactName String? // person to ask for at the store
+  phone       String?
+  address     String?
+  notes       String?
   items InventoryItem[]
   purchases PurchaseLog[]
 }

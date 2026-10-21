@@ -43,7 +43,7 @@ export default async function SupplyItemPage({
       <PageTitle
         eyebrow={`Supplies · ${inventoryLabel(item.category)}`}
         title={item.name}
-        sub={item.supplier ? `Supplier: ${item.supplier.name}${item.supplier.phone ? ` · ${item.supplier.phone}` : ""}` : "No supplier set"}
+        sub={item.supplier ? ["Buy from " + item.supplier.name, item.supplier.phone, item.supplier.address].filter(Boolean).join(" · ") : "No supplier set"}
         action={<Link href="/admin/supplies" className={btnGhostCls}>All supplies</Link>}
       />
       {saved && <p role="status" className="at-callout">Changes saved.</p>}

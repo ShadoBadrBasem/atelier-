@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { Gallery } from "@/components/Gallery";
+import { MoodBoard } from "@/components/admin/MoodBoard";
 import { ClientDiscountForm } from "@/components/admin/ClientDiscountForm";
 import { Badge, Field, btnCls, btnGhostCls, inputCls } from "@/components/ui";
 import { Empty, Meter, PageTitle, Panel, Stat, Stats } from "@/components/admin/kit";
@@ -31,6 +31,7 @@ export default async function ClientPage({
     where: { id },
     include: {
       measurements: { orderBy: { version: "desc" } },
+      boardNotes: { orderBy: { createdAt: "asc" } },
       messages: { orderBy: { sentAt: "desc" }, take: 12, include: { order: { select: { code: true } } } },
       appointments: { where: { status: "scheduled", startsAt: { gt: new Date() } }, orderBy: { startsAt: "asc" }, take: 1 },
       orders: {
@@ -58,6 +59,7 @@ export default async function ClientPage({
     (a, b) => (b.depositAmount - Math.min(b.finance.paid, b.depositAmount)) - (a.depositAmount - Math.min(a.finance.paid, a.depositAmount)),
   )[0];
 
+  const board = await db.attachment.findMany({ where: { clientId: client.id, orderId: null }, orderBy: { createdAt: "asc" } });
   const overrides = await loadOverrides();
   const nextAppt = client.appointments[0] ?? null;
   const waOptions = [
@@ -352,8 +354,12 @@ export default async function ClientPage({
         )}
       </Panel>
 
-      <Panel title="Inspiration & files">
-        <Gallery clientId={client.id} defaultCategory="inspiration" />
+      <Panel title="Mood board" eyebrow="Inspiration & notes">
+        <MoodBoard
+          clientId={client.id}
+          images={board.map((a) => ({ kind: "image" as const, id: a.id, caption: a.caption, isPdf: a.mime === "application/pdf", at: a.createdAt.getTime() }))}
+          notes={client.boardNotes.map((n) => ({ kind: "note" as const, id: n.id, text: n.text, tone: n.tone, at: n.createdAt.getTime() }))}
+        />
       </Panel>
     </main>
   );

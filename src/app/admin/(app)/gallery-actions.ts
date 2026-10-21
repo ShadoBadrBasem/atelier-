@@ -9,7 +9,7 @@ import { ATTACHMENT_CATEGORIES } from "@/lib/constants";
 
 const patch = z.object({
   category: z.enum(ATTACHMENT_CATEGORIES.map((c) => c.key) as [string, ...string[]]).optional(),
-  caption: z.string().max(300).nullable().optional(),
+  caption: z.string().max(1000).nullable().optional(),
   sharedOnTracking: z.boolean().optional(),
 });
 
@@ -48,4 +48,30 @@ export async function deleteAttachment(id: string) {
   }
   await removeAttachmentFiles(id);
   refresh(a);
+}
+
+// ---- Mood board notes (client galleries)
+
+const note = z.object({
+  text: z.string().trim().min(1, "Write something first").max(1000),
+  tone: z.enum(["sand", "copper", "olive", "rose"]).default("sand"),
+});
+
+export async function createBoardNote(clientId: string, input: z.input<typeof note>) {
+  await requireUser();
+  const data = note.parse(input);
+  await db.boardNote.create({ data: { ...data, clientId } });
+  revalidatePath(`/admin/clients/${clientId}`);
+}
+
+export async function updateBoardNote(id: string, input: z.input<typeof note>) {
+  await requireUser();
+  const n = await db.boardNote.update({ where: { id }, data: note.parse(input) });
+  revalidatePath(`/admin/clients/${n.clientId}`);
+}
+
+export async function deleteBoardNote(id: string) {
+  await requireUser();
+  const n = await db.boardNote.delete({ where: { id } });
+  revalidatePath(`/admin/clients/${n.clientId}`);
 }
