@@ -9,6 +9,9 @@ Set-Location $root
 New-Item -ItemType Directory -Force -Path "$root\logs" | Out-Null
 $port = if ($env:ATELIER_PORT) { $env:ATELIER_PORT } else { "3100" }
 
+# The watchdog task runs this every few minutes: do nothing if the app is already up.
+if (Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) { return }
+
 # Apply any new database migrations (never deletes data).
 npx prisma migrate deploy
 

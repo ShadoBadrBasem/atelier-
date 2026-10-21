@@ -12,6 +12,9 @@ $config = Join-Path $env:USERPROFILE ".cloudflared\config.yml"
 $cf = (Get-Command cloudflared -ErrorAction SilentlyContinue).Source
 if (-not $cf) { $cf = "${env:ProgramFiles(x86)}\cloudflared\cloudflared.exe" }
 
+# The watchdog task runs this every few minutes: do nothing if the tunnel is already up.
+if (Get-Process cloudflared -ErrorAction SilentlyContinue) { return }
+
 $root = Split-Path -Parent $PSScriptRoot
 New-Item -ItemType Directory -Force -Path "$root\logs" | Out-Null
 $log = "$root\logs\tunnel.log"

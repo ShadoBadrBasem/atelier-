@@ -21,12 +21,16 @@ $hidden = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File"
 $logon = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0 -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
 
-Register-ScheduledTask -TaskName "Atelier app" -Trigger $logon -Settings $settings `
+# Watchdog: every 5 minutes, relaunch whatever stopped (the start scripts exit if already running).
+$watch = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval (New-TimeSpan -Minutes 5)
+
+Register-ScheduledTask -TaskName "Atelier app" -Trigger @($logon, $watch) -Settings $settings `
   -Action (New-ScheduledTaskAction -Execute $ps -Argument "$hidden `"$root\scripts\start-atelier.ps1`"" -WorkingDirectory $root) | Out-Null
 
 $tunnelTrigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $tunnelTrigger.Delay = "PT30S" # give the app a head start
-Register-ScheduledTask -TaskName "Atelier tunnel" -Trigger $tunnelTrigger -Settings $settings `
+$tunnelWatch = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(6) -RepetitionInterval (New-TimeSpan -Minutes 5)
+Register-ScheduledTask -TaskName "Atelier tunnel" -Trigger @($tunnelTrigger, $tunnelWatch) -Settings $settings `
   -Action (New-ScheduledTaskAction -Execute $ps -Argument "$hidden `"$root\scripts\start-tunnel.ps1`"" -WorkingDirectory $root) | Out-Null
 
 $nightly = New-ScheduledTaskTrigger -Daily -At 23:00
