@@ -56,9 +56,10 @@ export const COST_CATEGORIES = [
   { key: "other", label: "Other" },
 ] as const;
 
+// In the order the atelier takes them. Stored by name in Measurement.data (cm).
 export const MEASUREMENT_FIELDS = [
-  "bust", "underbust", "waist", "hip", "shoulder", "back length", "front length",
-  "arm length", "bicep", "height", "skirt length", "train length",
+  "bust", "pence", "amper", "front length", "waist", "hip", "back length",
+  "shoulders", "back width", "bicep", "arm length", "wrist", "skirt length", "skirt train",
 ] as const;
 
 export const PAYMENT_STATUS_STYLE: Record<string, { label: string; cls: string }> = {

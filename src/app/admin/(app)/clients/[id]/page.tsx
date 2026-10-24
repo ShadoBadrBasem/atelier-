@@ -331,7 +331,7 @@ export default async function ClientPage({
         </form>
         {client.measurements.length > 0 && (
           <div className="mt-5 overflow-x-auto">
-            <table className="at-table min-w-[640px]">
+            <table className="at-table min-w-[960px]">
               <thead>
                 <tr>
                   <th>Version</th>
