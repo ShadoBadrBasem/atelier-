@@ -12,17 +12,9 @@ $config = Join-Path $env:USERPROFILE ".cloudflared\config.yml"
 $cf = (Get-Command cloudflared -ErrorAction SilentlyContinue).Source
 if (-not $cf) { $cf = "${env:ProgramFiles(x86)}\cloudflared\cloudflared.exe" }
 
-# The watchdog task runs this every few minutes. cloudflared's /ready answers 200 only while
-# it is connected to Cloudflare; a process that lost its tunnel (e.g. after sleep) is replaced.
+# Fixed port for cloudflared's health endpoint; scripts\watchdog.ps1 checks /ready on it.
 $metrics = "127.0.0.1:20241"
-$running = Get-Process cloudflared -ErrorAction SilentlyContinue
-if ($running) {
-  try {
-    if ((Invoke-WebRequest -Uri "http://$metrics/ready" -UseBasicParsing -TimeoutSec 5).StatusCode -eq 200) { return }
-  } catch {}
-  $running | Stop-Process -Force
-  Start-Sleep -Seconds 2
-}
+if (Get-Process cloudflared -ErrorAction SilentlyContinue) { return } # already running
 
 $root = Split-Path -Parent $PSScriptRoot
 New-Item -ItemType Directory -Force -Path "$root\logs" | Out-Null

@@ -38,9 +38,9 @@ export default async function TasksPage() {
           <div className="col-span-2 md:col-span-6"><button className={btnCls}>Add</button></div>
         </form>
       </Panel>
-      <Panel title="Today">{todayList.length ? <TaskList tasks={todayList} showDelete /> : <Empty>Nothing due today.</Empty>}</Panel>
-      <Panel title="Upcoming">{upcoming.length ? <TaskList tasks={upcoming} showDelete /> : <Empty>Nothing scheduled.</Empty>}</Panel>
-      {someday.length > 0 && <Panel title="No date"><TaskList tasks={someday} showDelete /></Panel>}
+      <Panel title="Today">{todayList.length ? <TaskList tasks={todayList} showDelete orders={orders} /> : <Empty>Nothing due today.</Empty>}</Panel>
+      <Panel title="Upcoming">{upcoming.length ? <TaskList tasks={upcoming} showDelete orders={orders} /> : <Empty>Nothing scheduled.</Empty>}</Panel>
+      {someday.length > 0 && <Panel title="No date"><TaskList tasks={someday} showDelete orders={orders} /></Panel>}
       {done.length > 0 && <Panel title="Recently done"><TaskList tasks={done} /></Panel>}
     </main>
   );

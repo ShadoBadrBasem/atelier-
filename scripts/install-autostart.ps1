@@ -7,7 +7,7 @@ param([switch]$Remove)
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
-$names = "Atelier app", "Atelier tunnel", "Atelier backup"
+$names = "Atelier app", "Atelier tunnel", "Atelier backup", "Atelier watchdog"
 
 foreach ($n in $names) {
   if (Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue) {
@@ -21,17 +21,20 @@ $hidden = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File"
 $logon = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0 -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
 
-# Watchdog: every 5 minutes, relaunch whatever stopped (the start scripts exit if already running).
-$watch = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval (New-TimeSpan -Minutes 5)
-
-Register-ScheduledTask -TaskName "Atelier app" -Trigger @($logon, $watch) -Settings $settings `
+Register-ScheduledTask -TaskName "Atelier app" -Trigger $logon -Settings $settings `
   -Action (New-ScheduledTaskAction -Execute $ps -Argument "$hidden `"$root\scripts\start-atelier.ps1`"" -WorkingDirectory $root) | Out-Null
 
 $tunnelTrigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $tunnelTrigger.Delay = "PT30S" # give the app a head start
-$tunnelWatch = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(6) -RepetitionInterval (New-TimeSpan -Minutes 5)
-Register-ScheduledTask -TaskName "Atelier tunnel" -Trigger @($tunnelTrigger, $tunnelWatch) -Settings $settings `
+Register-ScheduledTask -TaskName "Atelier tunnel" -Trigger $tunnelTrigger -Settings $settings `
   -Action (New-ScheduledTaskAction -Execute $ps -Argument "$hidden `"$root\scripts\start-tunnel.ps1`"" -WorkingDirectory $root) | Out-Null
+
+# Watchdog: its own short task every 5 minutes, so it runs even while the app and tunnel
+# tasks are busy, and restarts whichever is not actually working.
+$watch = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(2) -RepetitionInterval (New-TimeSpan -Minutes 5)
+Register-ScheduledTask -TaskName "Atelier watchdog" -Trigger $watch `
+  -Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 4)) `
+  -Action (New-ScheduledTaskAction -Execute $ps -Argument "$hidden `"$root\scripts\watchdog.ps1`"" -WorkingDirectory $root) | Out-Null
 
 $nightly = New-ScheduledTaskTrigger -Daily -At 23:00
 Register-ScheduledTask -TaskName "Atelier backup" -Trigger $nightly -Settings (New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries) `

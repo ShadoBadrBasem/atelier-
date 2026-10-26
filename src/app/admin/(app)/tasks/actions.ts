@@ -59,3 +59,19 @@ export async function deleteTask(id: string) {
   await db.task.delete({ where: { id } });
   refresh();
 }
+
+export async function updateTask(id: string, fd: FormData) {
+  await requireUser();
+  await db.task.update({
+    where: { id },
+    data: {
+      title: z.string().min(1).max(200).parse(str(fd, "title")),
+      notes: optStr(fd, "notes"),
+      dueDate: optDate(fd, "dueDate"),
+      priority: Math.min(3, Math.max(1, int(fd, "priority", 2))),
+      recurrence: z.enum(["daily", "weekly", "monthly"]).nullable().parse(optStr(fd, "recurrence")),
+      orderId: optStr(fd, "orderId"),
+    },
+  });
+  refresh();
+}
