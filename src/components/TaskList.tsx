@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Task } from "@prisma/client";
 import { fmtDate, startOfDay, toDateInput, todayKey } from "@/lib/cairo";
-import { deleteTask, toggleTask, updateTask } from "@/app/admin/(app)/tasks/actions";
+import { deleteTask, reorderTasks, toggleTask, updateTask } from "@/app/admin/(app)/tasks/actions";
+import { SortableList } from "./admin/SortableList";
 import { Field, btnCls, inputCls } from "./ui";
 
 const PRIORITY = { 1: "High", 2: "", 3: "Low" } as Record<number, string>;
@@ -10,19 +11,21 @@ export function TaskList({
   tasks,
   showDelete = false,
   orders,
+  reorderable = false,
 }: {
   tasks: (Task & { order?: { id: string; code: string } | null; client?: { id: string; name: string } | null })[];
   showDelete?: boolean;
   /** When given, each task gets an Edit form (the order list feeds its Order field). */
   orders?: { id: string; code: string; title: string }[];
+  reorderable?: boolean;
 }) {
   const startOfToday = startOfDay(todayKey());
-  return (
-    <ul className="divide-y divide-olive/20">
-      {tasks.map((t) => {
+  const rows = tasks.map((t) => {
         const overdue = !t.done && t.dueDate && t.dueDate < startOfToday;
-        return (
-          <li key={t.id} className="py-2">
+        return {
+          id: t.id,
+          node: (
+          <div className="py-2">
             <div className="flex items-center gap-3">
             <form action={toggleTask.bind(null, t.id)}>
               <button
@@ -75,9 +78,16 @@ export function TaskList({
                 </form>
               </details>
             )}
-          </li>
-        );
-      })}
+          </div>
+          ),
+        };
+      });
+
+  // On the Tasks page (editable) the open lists can be dragged into any order.
+  if (orders && reorderable) return <SortableList items={rows} onReorder={reorderTasks} />;
+  return (
+    <ul className="divide-y divide-olive/20">
+      {rows.map((r) => <li key={r.id}>{r.node}</li>)}
     </ul>
   );
 }

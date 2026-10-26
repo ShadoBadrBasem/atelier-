@@ -16,8 +16,10 @@ export async function createTask(fd: FormData) {
   await requireUser();
   const recurrence = z.enum(["daily", "weekly", "monthly"]).nullable().parse(optStr(fd, "recurrence"));
   const dueDate = optDate(fd, "dueDate");
+  const last = await db.task.aggregate({ _max: { sortOrder: true }, where: { done: false } });
   await db.task.create({
     data: {
+      sortOrder: (last._max.sortOrder ?? 0) + 1,
       title: z.string().min(1).max(200).parse(str(fd, "title")),
       notes: optStr(fd, "notes"),
       dueDate: dueDate ?? (recurrence ? new Date() : null),
@@ -43,7 +45,7 @@ export async function toggleTask(id: string) {
       if (t.recurrence && t.dueDate) {
         await tx.task.create({
           data: {
-            title: t.title, notes: t.notes, priority: t.priority, recurrence: t.recurrence,
+            title: t.title, notes: t.notes, priority: t.priority, recurrence: t.recurrence, sortOrder: t.sortOrder,
             orderId: t.orderId, clientId: t.clientId,
             dueDate: nextDue(t.dueDate, t.recurrence as Recurrence, now),
           },
@@ -73,5 +75,13 @@ export async function updateTask(id: string, fd: FormData) {
       orderId: optStr(fd, "orderId"),
     },
   });
+  refresh();
+}
+
+/** Saves a list's manual order: each id gets its position. */
+export async function reorderTasks(ids: string[]) {
+  await requireUser();
+  const list = z.array(z.string().min(1)).max(500).parse(ids);
+  await db.$transaction(list.map((id, i) => db.task.update({ where: { id }, data: { sortOrder: i } })));
   refresh();
 }

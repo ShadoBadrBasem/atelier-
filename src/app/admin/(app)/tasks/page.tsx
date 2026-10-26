@@ -10,7 +10,7 @@ const include = { order: { select: { id: true, code: true } }, client: { select:
 export default async function TasksPage() {
   const tomorrow = startOfDay(addDaysKey(todayKey(), 1));
   const [open, done, orders] = await Promise.all([
-    db.task.findMany({ where: { done: false }, orderBy: [{ dueDate: "asc" }, { priority: "asc" }], include }),
+    db.task.findMany({ where: { done: false }, orderBy: [{ sortOrder: "asc" }, { dueDate: "asc" }, { priority: "asc" }], include }),
     db.task.findMany({ where: { done: true }, orderBy: { doneAt: "desc" }, take: 15, include }),
     db.order.findMany({ where: { stage: { not: "delivered" } }, select: { id: true, code: true, title: true }, orderBy: { code: "desc" } }),
   ]);
@@ -38,9 +38,9 @@ export default async function TasksPage() {
           <div className="col-span-2 md:col-span-6"><button className={btnCls}>Add</button></div>
         </form>
       </Panel>
-      <Panel title="Today">{todayList.length ? <TaskList tasks={todayList} showDelete orders={orders} /> : <Empty>Nothing due today.</Empty>}</Panel>
-      <Panel title="Upcoming">{upcoming.length ? <TaskList tasks={upcoming} showDelete orders={orders} /> : <Empty>Nothing scheduled.</Empty>}</Panel>
-      {someday.length > 0 && <Panel title="No date"><TaskList tasks={someday} showDelete orders={orders} /></Panel>}
+      <Panel title="Today">{todayList.length ? <TaskList tasks={todayList} showDelete orders={orders} reorderable /> : <Empty>Nothing due today.</Empty>}</Panel>
+      <Panel title="Upcoming">{upcoming.length ? <TaskList tasks={upcoming} showDelete orders={orders} reorderable /> : <Empty>Nothing scheduled.</Empty>}</Panel>
+      {someday.length > 0 && <Panel title="No date"><TaskList tasks={someday} showDelete orders={orders} reorderable /></Panel>}
       {done.length > 0 && <Panel title="Recently done"><TaskList tasks={done} /></Panel>}
     </main>
   );

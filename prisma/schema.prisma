@@ -214,6 +214,7 @@ model Task {
   done       Boolean   @default(false)
   doneAt     DateTime?
   recurrence String? // daily | weekly | monthly | null
+  sortOrder  Int       @default(0) // manual order within a list; ties fall back to due date
   clientId   String?
   orderId    String?
   createdAt  DateTime  @default(now())

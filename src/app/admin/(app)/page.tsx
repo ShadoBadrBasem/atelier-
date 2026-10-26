@@ -23,7 +23,7 @@ export default async function Dashboard() {
   const [todayAppts, upcoming, tasks, pending, orders, inventory, monthPayments, monthCosts, monthExpenses] = await Promise.all([
     db.appointment.findMany({ where: { startsAt: { gte: today, lt: tomorrow }, status: { not: "cancelled" } }, orderBy: { startsAt: "asc" }, include: { client: { select: { name: true } } } }),
     db.appointment.findMany({ where: { startsAt: { gte: tomorrow, lt: in7 }, status: "scheduled" }, orderBy: { startsAt: "asc" }, include: { client: { select: { id: true, name: true, whatsapp: true, language: true } } } }),
-    db.task.findMany({ where: { done: false, dueDate: { lt: tomorrow } }, orderBy: [{ dueDate: "asc" }, { priority: "asc" }], include: { order: { select: { id: true, code: true } }, client: { select: { id: true, name: true } } } }),
+    db.task.findMany({ where: { done: false, dueDate: { lt: tomorrow } }, orderBy: [{ sortOrder: "asc" }, { dueDate: "asc" }, { priority: "asc" }], include: { order: { select: { id: true, code: true } }, client: { select: { id: true, name: true } } } }),
     db.bookingRequest.count({ where: { status: "pending" } }),
     ordersWithFinance({ stage: { not: "delivered" } }),
     db.inventoryItem.findMany({ select: { id: true, name: true, stock: true, reorderLevel: true, unit: true } }),
