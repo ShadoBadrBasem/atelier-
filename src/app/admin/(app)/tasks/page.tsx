@@ -4,6 +4,7 @@ import { Empty, PageTitle, Panel } from "@/components/admin/kit";
 import { TaskList } from "@/components/TaskList";
 import { addDaysKey, startOfDay, todayKey } from "@/lib/cairo";
 import { createTask } from "./actions";
+import { doneCutoff } from "@/lib/domain/tasks";
 
 const include = { order: { select: { id: true, code: true } }, client: { select: { id: true, name: true } } };
 
@@ -11,7 +12,8 @@ export default async function TasksPage() {
   const tomorrow = startOfDay(addDaysKey(todayKey(), 1));
   const [open, done, orders] = await Promise.all([
     db.task.findMany({ where: { done: false }, orderBy: [{ sortOrder: "asc" }, { dueDate: "asc" }, { priority: "asc" }], include }),
-    db.task.findMany({ where: { done: true }, orderBy: { doneAt: "desc" }, take: 15, include }),
+    // Finished tasks stay visible for a day, then drop off the list (they are kept, just hidden).
+    db.task.findMany({ where: { done: true, doneAt: { gte: doneCutoff() } }, orderBy: { doneAt: "desc" }, include }),
     db.order.findMany({ where: { stage: { not: "delivered" } }, select: { id: true, code: true, title: true }, orderBy: { code: "desc" } }),
   ]);
   // Overdue tasks carry over into Today automatically.
@@ -41,7 +43,7 @@ export default async function TasksPage() {
       <Panel title="Today">{todayList.length ? <TaskList tasks={todayList} showDelete orders={orders} reorderable /> : <Empty>Nothing due today.</Empty>}</Panel>
       <Panel title="Upcoming">{upcoming.length ? <TaskList tasks={upcoming} showDelete orders={orders} reorderable /> : <Empty>Nothing scheduled.</Empty>}</Panel>
       {someday.length > 0 && <Panel title="No date"><TaskList tasks={someday} showDelete orders={orders} reorderable /></Panel>}
-      {done.length > 0 && <Panel title="Recently done"><TaskList tasks={done} /></Panel>}
+      {done.length > 0 && <Panel title="Done today" eyebrow="Clears after a day"><TaskList tasks={done} /></Panel>}
     </main>
   );
 }

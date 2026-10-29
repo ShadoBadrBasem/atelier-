@@ -17,3 +17,7 @@ export function nextDue(due: Date, recurrence: Recurrence, from: Date = due): Da
   do step(); while (next <= from);
   return next;
 }
+
+/** Finished tasks stay listed for this long, then are hidden. */
+export const DONE_VISIBLE_MS = 24 * 60 * 60 * 1000;
+export const doneCutoff = (now: Date = new Date()) => new Date(now.getTime() - DONE_VISIBLE_MS);

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { Badge, btnCls, inputCls } from "@/components/ui";
-import { Empty, PageTitle, Panel, initials } from "@/components/admin/kit";
+import { Empty, PageTitle, Panel, Tabs, initials } from "@/components/admin/kit";
 import { fmtDate } from "@/lib/cairo";
 import { formatEgp } from "@/lib/money";
 import { financeInclude } from "@/lib/orderQueries";
@@ -11,30 +11,38 @@ import { clientAccount, discountLabel } from "@/lib/domain/clientAccount";
 export default async function ClientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; view?: string }>;
 }) {
-  const { q } = await searchParams;
-  const clients = await db.client.findMany({
+  const { q, view } = await searchParams;
+  const all = await db.client.findMany({
     where: q ? { OR: [{ name: { contains: q } }, { phone: { contains: q } }] } : undefined,
     orderBy: { createdAt: "desc" },
     include: { orders: { include: financeInclude } },
   });
   const now = new Date();
+  // A client moves to "Past" once every one of her orders is delivered; she is never deleted.
+  const isPast = (c: (typeof all)[number]) => c.orders.length > 0 && c.orders.every((o) => o.stage === "delivered");
+  const past = all.filter(isPast);
+  const current = all.filter((c) => !isPast(c));
+  const showPast = view === "past";
+  const clients = q ? all : showPast ? past : current;
+  const tab = (v: string, label: string, n: number) => ({ key: v, label: `${label} (${n})`, href: `/admin/clients${v === "past" ? "?view=past" : ""}` });
 
   return (
     <main className="flex flex-col gap-5">
       <PageTitle
         eyebrow="The Atelier"
         title="Clients"
-        sub={`${clients.length} ${clients.length === 1 ? "client" : "clients"}${q ? ` matching “${q}”` : ""}`}
+        sub={q ? `${clients.length} matching “${q}”` : `${current.length} current · ${past.length} past`}
         action={<Link href="/admin/clients/new" className={btnCls}>New client</Link>}
       />
+      {!q && <div><Tabs current={showPast ? "past" : "current"} items={[tab("current", "Current", current.length), tab("past", "Past", past.length)]} /></div>}
       <form>
         <input name="q" defaultValue={q} placeholder="Search name or phone" className={inputCls} aria-label="Search clients" />
       </form>
       <Panel>
         {clients.length === 0 ? (
-          <Empty>{q ? "No client matches that search." : "No clients yet."}</Empty>
+          <Empty>{q ? "No client matches that search." : showPast ? "No past clients yet. Clients move here once all their orders are delivered." : "No current clients."}</Empty>
         ) : (
           <ul className="at-rows">
             {clients.map((c) => {
