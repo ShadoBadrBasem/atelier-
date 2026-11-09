@@ -53,9 +53,9 @@ function OrderCard({ o, showStage }: { o: Row; showStage?: boolean }) {
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; deleted?: string }>;
 }) {
-  const { view = "kanban" } = await searchParams;
+  const { view = "kanban", deleted } = await searchParams;
   const orders = await ordersWithFinance();
   const byStage = new Map(STAGES.map((s) => [s.key as string, orders.filter((o) => o.stage === s.key)]));
   const inProgress = orders.filter((o) => o.stage !== "delivered").length;
@@ -68,6 +68,8 @@ export default async function OrdersPage({
         sub={`${inProgress} in progress · ${orders.length - inProgress} delivered`}
         action={<Link href="/admin/orders/new" className={btnCls}>New order</Link>}
       />
+
+      {deleted && <p role="status" className="at-callout">Order deleted.</p>}
 
       {/* Pipeline: one coloured tile per stage with its count. */}
       <nav className="ob-pipeline" aria-label="Orders per stage">

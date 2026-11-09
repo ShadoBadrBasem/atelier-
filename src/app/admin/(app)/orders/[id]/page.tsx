@@ -9,19 +9,27 @@ import { fmtDate, fmtDateTime, toDateInput } from "@/lib/cairo";
 import { formatEgp } from "@/lib/money";
 import { orderFinance } from "@/lib/domain/orderFinance";
 import { stageColor } from "@/lib/phaseColors";
+import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { WhatsAppSend } from "@/components/admin/WhatsAppSend";
 import { InvoiceShare } from "@/components/admin/InvoiceShare";
 import { composeOrder } from "@/lib/whatsapp/compose";
 import { loadOverrides } from "@/lib/whatsapp/overrides";
 import { templateLabel } from "@/lib/whatsapp/templates";
 import { COST_CATEGORIES, PAYMENT_METHODS, PAYMENT_STATUS_STYLE, STAGES, apptLabel, stageLabel } from "@/lib/constants";
-import { addCost, addMaterial, addPayment, deleteCost, deletePayment, removeMaterial, savePricing, setStage, updateOrderInfo } from "../actions";
+import { addCost, addMaterial, addPayment, deleteCost, deleteOrder, deletePayment, removeMaterial, savePricing, setStage, updateOrderInfo } from "../actions";
 
 const methodLabel = (k: string) => PAYMENT_METHODS.find((m) => m.key === k)?.label ?? k;
 const costLabel = (k: string) => COST_CATEGORIES.find((m) => m.key === k)?.label ?? k;
 
-export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ saved?: string }>;
+}) {
   const { id } = await params;
+  const { saved } = await searchParams;
   const o = await db.order.findUnique({
     where: { id },
     include: {
@@ -35,6 +43,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   });
   if (!o) notFound();
   const overrides = await loadOverrides();
+  const clients = await db.client.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
   const supplies = await db.inventoryItem.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, unit: true, stock: true, lastPrice: true } });
   const f = orderFinance(o, new Date());
   const ps = PAYMENT_STATUS_STYLE[f.status];
@@ -57,6 +66,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         action={
           <>
             <Badge cls={ps.cls}>{ps.label}</Badge>
+            <a href="#edit" className={btnGhostCls}>Edit</a>
             <Link href={`/admin/invoice/${o.id}`} className={btnGhostCls}>Invoice</Link>
           </>
         }
@@ -64,6 +74,8 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       <p className="-mt-3 text-sm">
         Client: <Link className="underline" href={`/admin/clients/${o.client.id}`}>{o.client.name}</Link>
       </p>
+
+      {saved && <p role="status" className="at-callout">Changes saved.</p>}
 
       <Panel title="Progress">
         <ol className="mb-4 flex gap-1.5 overflow-x-auto p-1">
@@ -255,15 +267,37 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         )}
       </Panel>
 
-      <Panel title="Details">
-        <form action={updateOrderInfo.bind(null, o.id)} className="grid gap-3 md:grid-cols-3">
-          <Field label="Title"><input name="title" required defaultValue={o.title} className={inputCls} /></Field>
-          <Field label="Type">
-            <select name="kind" defaultValue={o.kind} className={inputCls}><option value="bridal">Bridal</option><option value="evening">Evening</option></select>
-          </Field>
-          <Field label="Event date"><input name="eventDate" type="date" defaultValue={toDateInput(o.eventDate)} className={inputCls} /></Field>
-          <div className="md:col-span-3"><Field label="Notes, fabrics, details"><textarea name="notes" rows={4} defaultValue={o.notes ?? ""} className={inputCls} /></Field></div>
-          <div><button className={btnGhostCls}>Save details</button></div>
+      <div id="edit" className="scroll-mt-6">
+        <Panel title="Edit order" eyebrow="Details">
+          <form action={updateOrderInfo.bind(null, o.id)} className="grid gap-3 md:grid-cols-2">
+            <Field label="Client">
+              <select name="clientId" required defaultValue={o.clientId} className={inputCls}>
+                {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Gown title"><input name="title" required defaultValue={o.title} className={inputCls} /></Field>
+            <Field label="Type">
+              <select name="kind" defaultValue={o.kind} className={inputCls}><option value="bridal">Bridal</option><option value="evening">Evening</option></select>
+            </Field>
+            <Field label="Event date"><input name="eventDate" type="date" defaultValue={toDateInput(o.eventDate)} className={inputCls} /></Field>
+            <div className="md:col-span-2"><Field label="Notes, fabrics, details"><textarea name="notes" rows={4} defaultValue={o.notes ?? ""} className={inputCls} /></Field></div>
+            <div><button className={btnCls}>Save changes</button></div>
+          </form>
+          <p className="at-muted mt-3 text-sm">Price, discount and deposit are edited under Pricing & payment. The stage is changed under Progress.</p>
+        </Panel>
+      </div>
+
+      <Panel title="Delete order">
+        <form action={deleteOrder.bind(null, o.id)} className="flex flex-wrap items-center justify-between gap-3">
+          <p className="at-muted text-sm">
+            Permanently removes this order with its payments, costs and photos. Materials used go back into stock. Appointments and tasks stay, without the order.
+          </p>
+          <ConfirmButton
+            message={`Delete ${o.code} (${o.title})?${o.payments.length ? ` Its ${o.payments.length} payment${o.payments.length === 1 ? "" : "s"} totalling ${formatEgp(f.paid)} will also be removed from your figures.` : ""} This can't be undone.`}
+            className={btnDangerCls}
+          >
+            Delete order
+          </ConfirmButton>
         </form>
       </Panel>
     </main>

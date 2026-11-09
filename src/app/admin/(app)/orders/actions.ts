@@ -9,6 +9,7 @@ import { money, optDate, optStr, qty, str } from "@/lib/form";
 import { roundQty } from "@/lib/domain/inventory";
 import { finalPrice, type DiscountKind, type DiscountMode } from "@/lib/domain/pricing";
 import { readDiscount } from "@/lib/discountForm";
+import { removeOrder } from "@/lib/orderDelete";
 import { defaultBalanceDue } from "@/lib/domain/orderFinance";
 import { stageKeys, PAYMENT_METHODS, COST_CATEGORIES } from "@/lib/constants";
 
@@ -65,16 +66,43 @@ export async function createOrder(fd: FormData) {
 
 export async function updateOrderInfo(id: string, fd: FormData) {
   await requireUser();
-  await db.order.update({
-    where: { id },
-    data: {
-      title: z.string().min(1).max(120).parse(str(fd, "title")),
-      kind: z.enum(["bridal", "evening"]).parse(str(fd, "kind")),
-      eventDate: optDate(fd, "eventDate"),
-      notes: optStr(fd, "notes"),
-    },
-  });
+  const clientId = z.string().min(1, "Choose a client").parse(str(fd, "clientId"));
+  const before = await db.order.findUniqueOrThrow({ where: { id }, select: { clientId: true } });
+  await db.$transaction([
+    db.order.update({
+      where: { id },
+      data: {
+        clientId,
+        title: z.string().min(1).max(120).parse(str(fd, "title")),
+        kind: z.enum(["bridal", "evening"]).parse(str(fd, "kind")),
+        eventDate: optDate(fd, "eventDate"),
+        notes: optStr(fd, "notes"),
+      },
+    }),
+    // A corrected client carries the order's linked records with it.
+    ...(clientId !== before.clientId
+      ? [
+          db.attachment.updateMany({ where: { orderId: id }, data: { clientId } }),
+          db.appointment.updateMany({ where: { orderId: id }, data: { clientId } }),
+          db.task.updateMany({ where: { orderId: id, clientId: { not: null } }, data: { clientId } }),
+        ]
+      : []),
+  ]);
   revalidatePath(path(id));
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/clients/${before.clientId}`);
+  redirect(`${path(id)}?saved=1`);
+}
+
+export async function deleteOrder(id: string) {
+  await requireUser();
+  const { clientId } = await db.order.findUniqueOrThrow({ where: { id }, select: { clientId: true } });
+  await removeOrder(id);
+  revalidatePath("/admin");
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/supplies");
+  revalidatePath(`/admin/clients/${clientId}`);
+  redirect("/admin/orders?deleted=1");
 }
 
 export async function setStage(id: string, fd: FormData) {
